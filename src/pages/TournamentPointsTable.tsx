@@ -78,22 +78,22 @@ export default function TournamentPointsTable(
         const unsubSquads = squadService.subscribeAll((allSquads) => {
           byId.clear()
           byName.clear()
-          ;(allSquads as any[]).forEach((s) => {
-            if (!s?.id) return
-            byId.set(s.id, s)
-            const key = getSquadDisplayName(s).toLowerCase()
-            if (key) byName.set(key, s.id)
-          })
+            ; (allSquads as any[]).forEach((s) => {
+              if (!s?.id) return
+              byId.set(s.id, s)
+              const key = getSquadDisplayName(s).toLowerCase()
+              if (key) byName.set(key, s.id)
+            })
           setSquadsById(new Map(byId))
           setSquadIdByName(new Map(byName))
         })
 
         // Collect referenced squads from tournament config + matches
         const referenced: string[] = []
-        ;(((t as any)?.participantSquadIds || []) as any[]).forEach((sid) => referenced.push(String(sid || '').trim()))
-        ;(((t as any)?.groups || []) as any[]).forEach((g: any) => {
-          ;(g?.squadIds || []).forEach((sid: any) => referenced.push(String(sid || '').trim()))
-        })
+          ; (((t as any)?.participantSquadIds || []) as any[]).forEach((sid) => referenced.push(String(sid || '').trim()))
+          ; (((t as any)?.groups || []) as any[]).forEach((g: any) => {
+            ; (g?.squadIds || []).forEach((sid: any) => referenced.push(String(sid || '').trim()))
+          })
         ms.forEach((m) => {
           referenced.push(String(resolveSquadId(m as any, 'A') || '').trim())
           referenced.push(String(resolveSquadId(m as any, 'B') || '').trim())
@@ -140,7 +140,7 @@ export default function TournamentPointsTable(
       }
     }
     let cleanup: undefined | (() => void)
-    run().then((c: any) => { cleanup = typeof c === 'function' ? c : undefined }).catch(() => {})
+    run().then((c: any) => { cleanup = typeof c === 'function' ? c : undefined }).catch(() => { })
     return () => cleanup?.()
   }, [tournamentId])
 
@@ -212,7 +212,7 @@ export default function TournamentPointsTable(
       const groupBySquadId = new Map<string, { id: string; name: string }>()
 
       cfg.groups.forEach((g) => {
-        ;(g.squadIds || []).forEach((sid) => groupBySquadId.set(sid, { id: g.id, name: g.name }))
+        ; (g.squadIds || []).forEach((sid) => groupBySquadId.set(sid, { id: g.id, name: g.name }))
       })
 
       const displayNameForId = (id: string) =>
@@ -303,7 +303,7 @@ export default function TournamentPointsTable(
 
     const groupBySquadId = new Map<string, { id: string; name: string }>()
     effectiveGroups.forEach((g) => {
-      ;(g.squadIds || []).forEach((sid) => groupBySquadId.set(sid, { id: g.id, name: g.name }))
+      ; (g.squadIds || []).forEach((sid) => groupBySquadId.set(sid, { id: g.id, name: g.name }))
     })
 
     const initRow = (sid: string): Row => {
@@ -457,28 +457,6 @@ export default function TournamentPointsTable(
             <div className="mt-1 text-sm font-semibold text-slate-900">
               {qualifiedIds.length
                 ? qualifiedIds
-                    .map((id) => {
-                      const meta = ((tournament as any)?.participantSquadMeta || {}) as Record<string, { name?: string }>
-                      return (
-                        getSquadDisplayName(squadsById.get(id)) ||
-                        String(meta?.[id]?.name || '').trim() ||
-                        String((matches.find((m: any) => String(resolveSquadId(m, 'A') || '').trim() === id)?.teamAName) || '').trim() ||
-                        String((matches.find((m: any) => String(resolveSquadId(m, 'B') || '').trim() === id)?.teamBName) || '').trim() ||
-                        id ||
-                        'Squad'
-                      )
-                    })
-                    .join(', ')
-                : '—'}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-          <div className="text-xs font-bold text-slate-500">QUALIFIED (auto)</div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">
-            {qualifiedIds.length
-              ? qualifiedIds
                   .map((id) => {
                     const meta = ((tournament as any)?.participantSquadMeta || {}) as Record<string, { name?: string }>
                     return (
@@ -491,6 +469,28 @@ export default function TournamentPointsTable(
                     )
                   })
                   .join(', ')
+                : '—'}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+          <div className="text-xs font-bold text-slate-500">QUALIFIED (auto)</div>
+          <div className="mt-1 text-sm font-semibold text-slate-900">
+            {qualifiedIds.length
+              ? qualifiedIds
+                .map((id) => {
+                  const meta = ((tournament as any)?.participantSquadMeta || {}) as Record<string, { name?: string }>
+                  return (
+                    getSquadDisplayName(squadsById.get(id)) ||
+                    String(meta?.[id]?.name || '').trim() ||
+                    String((matches.find((m: any) => String(resolveSquadId(m, 'A') || '').trim() === id)?.teamAName) || '').trim() ||
+                    String((matches.find((m: any) => String(resolveSquadId(m, 'B') || '').trim() === id)?.teamBName) || '').trim() ||
+                    id ||
+                    'Squad'
+                  )
+                })
+                .join(', ')
               : '—'}
           </div>
         </div>
@@ -524,7 +524,7 @@ export default function TournamentPointsTable(
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {rows.map((r, idx) => {
+                      {rows.map((r: any, idx: number) => {
                         const isQualified = qualifiedIds.includes(r.squadId)
                         return (
                           <tr key={r.squadId} className={isQualified ? 'bg-emerald-50/60' : ''}>

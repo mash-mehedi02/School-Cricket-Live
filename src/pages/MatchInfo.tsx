@@ -114,9 +114,9 @@ export default function MatchInfo() {
     )
   }
 
-  const teamAName = match.teamAName || teamASquad?.name || match.teamA || 'Team A'
-  const teamBName = match.teamBName || teamBSquad?.name || match.teamB || 'Team B'
-  
+  const teamAName = match.teamAName || teamASquad?.name || (match as any).teamA || 'Team A'
+  const teamBName = match.teamBName || teamBSquad?.name || (match as any).teamB || 'Team B'
+
   // Handle date (Timestamp or string)
   const matchDate = coerceToDate((match as any).date)
   const timeText = (match as any).time || (matchDate ? formatTimeLabel(matchDate) : '')
@@ -133,7 +133,7 @@ export default function MatchInfo() {
           <div className="h-1 flex-1 bg-gradient-to-r from-teal-500/30 to-transparent rounded-full"></div>
         </div>
       </div>
-      
+
       <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl p-8 border-2 border-slate-200 space-y-6">
         {/* Teams */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-100">
@@ -142,13 +142,13 @@ export default function MatchInfo() {
             {teamAName} <span className="text-blue-500">vs</span> {teamBName}
           </p>
         </div>
-        
+
         {/* Venue */}
         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border-2 border-emerald-100">
           <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-3">📍 Venue</h3>
           <p className="text-xl font-bold text-slate-900">{match.venue || 'Venue TBA'}</p>
         </div>
-        
+
         {/* Tournament */}
         {tournament && (
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-100">
@@ -162,13 +162,13 @@ export default function MatchInfo() {
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-100">
           <h3 className="text-sm font-bold text-purple-700 uppercase tracking-wider mb-3">📅 Date & Time</h3>
           <p className="text-xl font-bold text-slate-900">
-            {matchDate 
+            {matchDate
               ? matchDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-              : 'TBA'} 
+              : 'TBA'}
             {timeText ? ` at ${timeText}` : ''}
           </p>
         </div>
-        
+
         {/* Toss */}
         {match.tossWinner && (
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-6 border-2 border-amber-100">

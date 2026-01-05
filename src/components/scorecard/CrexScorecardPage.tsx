@@ -83,7 +83,6 @@ const CrexScorecardPage: React.FC<CrexScorecardPageProps> = ({
               </div>
               <BattingTable
                 batsmen={inningsData.batsmanStats || []}
-                playersMap={playersMap}
               />
             </div>
 
@@ -99,7 +98,6 @@ const CrexScorecardPage: React.FC<CrexScorecardPageProps> = ({
               </div>
               <BowlingTable
                 bowlers={inningsData.bowlerStats || []}
-                playersMap={playersMap}
               />
             </div>
 
@@ -137,7 +135,6 @@ const CrexScorecardPage: React.FC<CrexScorecardPageProps> = ({
               <YetToBatGrid
                 playingXI={currentInnings === 'teamA' ? matchData.teamAPlayingXI : matchData.teamBPlayingXI}
                 batsmanStats={inningsData.batsmanStats || []}
-                playersMap={playersMap}
               />
             </div>
 

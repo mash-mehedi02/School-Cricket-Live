@@ -325,7 +325,7 @@ export default function Home() {
                         </div>
 
                         <h3 className="font-bold text-xl text-slate-900 mb-2 group-hover:text-teal-600 transition">
-                          {match.teamAName || match.teamA || 'Team A'} vs {match.teamBName || match.teamB || 'Team B'}
+                          {match.teamAName || (match as any).teamA || 'Team A'} vs {match.teamBName || (match as any).teamB || 'Team B'}
                         </h3>
                         <p className="text-sm text-slate-600 font-medium mb-1">📍 {match.venue || 'Venue TBA'}</p>
 
@@ -390,7 +390,7 @@ export default function Home() {
                           </span>
                         </div>
                         <h3 className="font-bold text-xl text-slate-900 mb-2 group-hover:text-amber-700 transition">
-                          {match.teamAName || match.teamA || 'Team A'} vs {match.teamBName || match.teamB || 'Team B'}
+                          {match.teamAName || (match as any).teamA || 'Team A'} vs {match.teamBName || (match as any).teamB || 'Team B'}
                         </h3>
                         <p className="text-sm text-slate-600 font-medium mb-1">📍 {match.venue || 'Venue TBA'}</p>
                         {d ? (
@@ -447,7 +447,7 @@ export default function Home() {
                           </span>
                         </div>
                         <h3 className="font-bold text-xl text-slate-900 mb-2 group-hover:text-blue-600 transition">
-                          {match.teamAName || match.teamA || 'Team A'} vs {match.teamBName || match.teamB || 'Team B'}
+                          {match.teamAName || (match as any).teamA || 'Team A'} vs {match.teamBName || (match as any).teamB || 'Team B'}
                         </h3>
                         <p className="text-sm text-slate-600 font-medium mb-1">📍 {match.venue || 'Venue TBA'}</p>
                         {d ? (

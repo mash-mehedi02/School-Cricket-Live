@@ -13,6 +13,7 @@ export interface MatchData {
   teamAPlayingXI?: string[]
   teamBPlayingXI?: string[]
   played?: boolean
+  year?: string | number
 }
 
 /**
@@ -27,14 +28,14 @@ export function countMatches(
   playerId: string
 ): number {
   if (!matches || !Array.isArray(matches)) return 0
-  
+
   return matches.filter((match) => {
     // Check if match should count
     if (!shouldCountMatch(match, playerId)) return false
-    
+
     // Additional check: played flag
     if (match.played === false) return false
-    
+
     return true
   }).length
 }
@@ -57,7 +58,7 @@ export function getCountedMatches(
   playerId: string
 ): MatchData[] {
   if (!matches || !Array.isArray(matches)) return []
-  
+
   return matches.filter((match) => shouldMatchCount(match, playerId))
 }
 

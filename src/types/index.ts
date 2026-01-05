@@ -177,6 +177,7 @@ export interface Match {
   venue: string
   date: string
   time: string
+  year?: number | string
   startTime?: Timestamp
   oversLimit: number
   ballType: BallType
@@ -214,6 +215,11 @@ export type WicketType =
   | 'hit-wicket'
   | 'obstructing-field'
   | 'retired'
+  | 'retired-hurt'
+  | 'retired-out'
+  | 'timed-out'
+  | 'handled-ball'
+  | 'hit-ball-twice'
 
 export interface BallWicket {
   type: WicketType
