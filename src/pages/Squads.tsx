@@ -21,11 +21,11 @@ export default function Squads() {
     const loadData = async () => {
       try {
         setLoading(true)
-        
+
         // Load squads
         const allSquads = await squadService.getAll()
         setSquads(allSquads)
-        
+
         // Extract unique batches (fallback to year for legacy squads)
         const uniqueBatches = [...new Set(allSquads.map((s: any) => String(s.batch || s.year || '')))]
           .filter(Boolean)
@@ -36,7 +36,7 @@ export default function Squads() {
             return b.localeCompare(a)
           })
         setBatches(uniqueBatches)
-        
+
         // Load tournaments for mapping
         const allTournaments = await tournamentService.getAll()
         const tournamentMap = new Map<string, Tournament>()
@@ -67,17 +67,16 @@ export default function Squads() {
           </h1>
           <div className="h-1 flex-1 bg-gradient-to-r from-blue-500/30 to-transparent rounded-full"></div>
         </div>
-        
+
         {/* Batch Filter */}
         {batches.length > 0 && (
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setSelectedBatch(null)}
-              className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                selectedBatch === null
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg ${selectedBatch === null
                   ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-teal-500/50 scale-105'
                   : 'bg-white text-slate-700 hover:bg-slate-50 shadow-md hover:shadow-lg border-2 border-slate-200'
-              }`}
+                }`}
             >
               All Batches
             </button>
@@ -85,11 +84,10 @@ export default function Squads() {
               <button
                 key={batch}
                 onClick={() => setSelectedBatch(batch)}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                  selectedBatch === batch
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg ${selectedBatch === batch
                     ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-teal-500/50 scale-105'
                     : 'bg-white text-slate-700 hover:bg-slate-50 shadow-md hover:shadow-lg border-2 border-slate-200'
-                }`}
+                  }`}
               >
                 {batch}
               </button>
@@ -112,7 +110,7 @@ export default function Squads() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSquads.map((squad) => {
-            const tournament = tournaments.get(squad.tournamentId)
+            const tournament = squad.tournamentId ? tournaments.get(squad.tournamentId) : undefined
             return (
               <div
                 key={squad.id}
@@ -133,7 +131,7 @@ export default function Squads() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 mb-5">
                     <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3">
                       <span className="text-sm font-semibold text-slate-700">Players</span>

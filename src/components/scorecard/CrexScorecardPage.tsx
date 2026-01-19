@@ -29,7 +29,6 @@ const CrexScorecardPage: React.FC<CrexScorecardPageProps> = ({
   teamAName,
   teamBName,
   currentInnings,
-  playersMap,
 }) => {
   if (!inningsData) {
     return (
@@ -112,8 +111,8 @@ const CrexScorecardPage: React.FC<CrexScorecardPageProps> = ({
             {/* Partnership Section */}
             <div className="bg-white rounded-lg shadow-md p-4">
               <PartnershipSection
-                partnership={inningsData.partnership || { runs: 0, balls: 0 }}
-                currentScore={inningsData.totalRuns || 0}
+                partnerships={[]}
+                currentPartnership={inningsData.partnership}
               />
             </div>
 

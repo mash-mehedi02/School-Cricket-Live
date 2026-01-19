@@ -4,8 +4,7 @@
  * Uses recentOvers from innings document
  */
 
-import React from 'react'
-import { getBallColor, CREX_COLORS } from '../../config/crex-design'
+import { getBallColor } from '@/config/crex-design'
 
 interface RecentOver {
   overNumber: number
@@ -36,13 +35,13 @@ export default function CrexBallTimeline({
   currentOverBalls = [],
 }: CrexBallTimelineProps) {
   const allOvers = [...recentOvers]
-  
+
   // Add current over if not complete
   if (currentOverBalls.length > 0) {
-    const lastOverNum = recentOvers.length > 0 
-      ? recentOvers[recentOvers.length - 1].overNumber + 1 
+    const lastOverNum = recentOvers.length > 0
+      ? recentOvers[recentOvers.length - 1].overNumber + 1
       : 1
-    
+
     allOvers.push({
       overNumber: lastOverNum,
       balls: currentOverBalls,
@@ -72,7 +71,7 @@ export default function CrexBallTimeline({
   return (
     <div className="bg-white rounded-xl shadow-md p-6 border border-crex-gray-200">
       <h3 className="text-lg font-semibold text-crex-gray-900 mb-4">Ball Timeline</h3>
-      
+
       {allOvers.length === 0 ? (
         <div className="text-center py-12 text-crex-gray-500">
           <p>No balls bowled yet</p>

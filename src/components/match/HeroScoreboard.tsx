@@ -11,11 +11,11 @@ interface HeroScoreboardProps {
 }
 
 export default function HeroScoreboard({ match, innings }: HeroScoreboardProps) {
-  const isLive = match.status === 'live' || match.status === 'Live'
-  const teamAName = match.teamAName || match.teamA || 'Team A'
-  const teamBName = match.teamBName || match.teamB || 'Team B'
+  const isLive = match.status === 'live'
+  const teamAName = match.teamAName
+  const teamBName = match.teamBName
   const battingTeam = match.currentBatting === 'teamA' ? teamAName : teamBName
-  
+
   // Ensure innings data exists
   if (!innings) {
     return (
@@ -26,7 +26,7 @@ export default function HeroScoreboard({ match, innings }: HeroScoreboardProps) 
       </div>
     )
   }
-  
+
   return (
     <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 rounded-xl shadow-2xl overflow-hidden border border-blue-700">
       {/* Status Bar - Dark Blue Header */}
@@ -66,7 +66,7 @@ export default function HeroScoreboard({ match, innings }: HeroScoreboardProps) 
             <div>
               <div className="text-xs text-white/70 uppercase tracking-wide mb-1">CRR</div>
               <div className="text-2xl font-bold text-white">
-                {typeof innings.currentRunRate === 'number' 
+                {typeof innings.currentRunRate === 'number'
                   ? innings.currentRunRate.toFixed(2)
                   : parseFloat(String(innings.currentRunRate || 0)).toFixed(2)}
               </div>

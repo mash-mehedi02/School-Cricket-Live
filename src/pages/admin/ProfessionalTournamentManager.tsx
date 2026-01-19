@@ -8,7 +8,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { tournamentService } from '@/services/firestore/tournaments';
 import { squadService } from '@/services/firestore/squads';
 import { matchService } from '@/services/firestore/matches';
-import { Tournament, Squad, Match } from '@/types';
+import { Tournament, Squad, Match, MatchStatus } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -58,7 +58,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
 
   useEffect(() => {
     setActiveTab(mode);
-    if (mode === 'dashboard' || mode === 'list') {
+    if (mode === 'dashboard') {
       loadTournaments();
     } else if (mode === 'create') {
       loadSquads();
@@ -205,7 +205,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
       const participantSquadMeta: Record<string, { name: string; batch?: string }> = {};
       selectedIds.forEach((sid) => {
         const s = squads.find((x: any) => x.id === sid);
-        const name = String((s?.name || s?.teamName || s?.squadName || s?.title || '')).trim() || sid;
+        const name = String((s?.name || '')).trim() || sid;
         const batch = String((s?.batch || '')).trim() || undefined;
         participantSquadMeta[sid] = { name, ...(batch ? { batch } : {}) };
       });
@@ -215,11 +215,11 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
         kind: formData.tournamentType,
         year: formData.year,
         stage: 'group',
-        points: { 
-          win: formData.pointsForWin, 
-          loss: formData.pointsForLoss, 
-          tie: formData.pointsForTie, 
-          noResult: formData.pointsForNoResult 
+        points: {
+          win: formData.pointsForWin,
+          loss: formData.pointsForLoss,
+          tie: formData.pointsForTie,
+          noResult: formData.pointsForNoResult
         },
         ranking: { order: ['points', 'nrr', 'head_to_head', 'wins'] },
         groups: groups.map((g: any) => ({
@@ -294,7 +294,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
 
   const handleGenerateFixtures = async () => {
     if (!id) return;
-    
+
     setGenerating(true);
     try {
       // Generate fixtures based on tournament configuration
@@ -304,12 +304,12 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
       // Get the tournament config and generate group fixtures
       const config = (tournament as any).config;
       const fixturePlan = generateGroupFixtures(config);
-      
+
       // Create match records for each fixture
       for (const fixture of fixturePlan.matches) {
         // Find the group for this match
         const group = config.groups.find((g: any) => g.id === fixture.groupId);
-        
+
         // Create a match record
         const matchData = {
           tournamentId: id,
@@ -325,31 +325,30 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
           time: '',
           year: formData.year,
           oversLimit: formData.oversLimit,
-          status: 'Upcoming',
-          stage: 'group',
-          stageLabel: 'Group',
-          ballType: 'white',
-          matchPhase: 'FirstInnings',
+          status: 'upcoming' as MatchStatus,
+          ballType: 'white' as any,
+          matchPhase: 'FirstInnings' as const,
           teamAPlayingXI: [],
           teamBPlayingXI: [],
           teamACaptainId: '',
           teamAKeeperId: '',
           teamBCaptainId: '',
           teamBKeeperId: '',
-          currentBatting: 'teamA',
+          currentBatting: 'teamA' as const,
           currentStrikerId: '',
           currentNonStrikerId: '',
           currentBowlerId: '',
           lastOverBowlerId: '',
           freeHit: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: user?.email || '',
+          createdBy: user?.uid || '',
+          // Extra props for UI / future needs
+          stage: 'group',
+          stageLabel: 'Group',
         };
-        
-        await matchService.create(matchData);
+
+        await matchService.create(matchData as any);
       }
-      
+
       toast.success(`${fixturePlan.matches.length} fixtures generated successfully!`);
       // Reload matches to show the new fixtures
       loadMatches(id);
@@ -363,7 +362,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
 
   const handleGenerateKnockout = async () => {
     if (!id) return;
-    
+
     setGenerating(true);
     try {
       // Validate that tournament exists and has proper configuration
@@ -371,20 +370,20 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
       if (!tournament) {
         throw new Error('Tournament not found');
       }
-      
+
       // Check if group stage is enabled and completed matches exist
       const groupMatches = matches.filter(m => (m as any).stage === 'group' || !(m as any).stage);
-      const completedGroupMatches = groupMatches.filter(m => m.status === 'Completed' || m.status === 'Finished' || m.status === 'completed' || m.status === 'finished');
-      
+      const completedGroupMatches = groupMatches.filter(m => m.status === 'finished' || m.status === 'abandoned');
+
       if (groupMatches.length > 0 && completedGroupMatches.length === 0) {
         toast.error('Group stage matches must be completed before generating knockout fixtures');
         setGenerating(false);
         return;
       }
-      
+
       // Generate knockout stage fixtures based on group results
       await generateKnockoutFixtures(id);
-      
+
       toast.success('Knockout fixtures generated successfully!');
       loadMatches(id); // Reload matches to show newly generated fixtures
     } catch (error) {
@@ -415,61 +414,55 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/dashboard`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'dashboard'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'dashboard'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Dashboard
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/groups`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'groups'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'groups'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Groups
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/fixtures`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'fixtures'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'fixtures'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Fixtures
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/knockout`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'knockout'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'knockout'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Knockout
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/standings`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'standings'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'standings'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Standings
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/settings`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'settings'
-                ? 'border-teal-500 text-teal-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'settings'
+              ? 'border-teal-500 text-teal-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Settings
           </button>
@@ -622,9 +615,8 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                 return (
                   <label
                     key={squad.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
-                      checked ? 'bg-teal-50 border-teal-200' : 'border-gray-200 hover:bg-gray-50'
-                    } cursor-pointer`}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${checked ? 'bg-teal-50 border-teal-200' : 'border-gray-200 hover:bg-gray-50'
+                      } cursor-pointer`}
                   >
                     <input
                       type="checkbox"
@@ -648,9 +640,9 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                     {checked && (
                       <select
                         value={safeGroupBy[squad.id] || gids[0]}
-                        onChange={(e) => setFormData((p) => ({ 
-                          ...p, 
-                          groupBySquadId: { ...safeGroupBy, [squad.id]: e.target.value } 
+                        onChange={(e) => setFormData((p) => ({
+                          ...p,
+                          groupBySquadId: { ...safeGroupBy, [squad.id]: e.target.value }
                         }))}
                         className="px-2 py-1 border border-gray-300 rounded-md text-xs font-bold"
                       >
@@ -694,7 +686,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-semibold text-gray-900"
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Type</div>
@@ -721,7 +713,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                         <option value="priority">Priority</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Round Format</div>
                       <select
@@ -749,7 +741,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Qualify Count</div>
@@ -775,7 +767,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                         className="w-full px-2 py-1 border border-gray-300 rounded-md text-xs font-bold"
                       />
                     </div>
-                    
+
                     <div className="flex items-center">
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-700">
                         <input
@@ -801,7 +793,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                       </label>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700 mb-1">Teams in Group:</div>
                     {g.squadIds.length === 0 ? (
@@ -817,7 +809,7 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-xs font-bold text-gray-700 mb-1">Qualification Summary</div>
               <div className="text-xs text-gray-500">
@@ -1199,13 +1191,12 @@ export default function ProfessionalTournamentManager({ mode = 'dashboard' }: Pr
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          tournament.status === 'completed'
-                            ? 'bg-green-100 text-green-700'
-                            : tournament.status === 'ongoing'
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${tournament.status === 'completed'
+                          ? 'bg-green-100 text-green-700'
+                          : tournament.status === 'ongoing'
                             ? 'bg-red-100 text-red-700'
                             : 'bg-gray-100 text-gray-700'
-                        }`}
+                          }`}
                       >
                         {tournament.status}
                       </span>

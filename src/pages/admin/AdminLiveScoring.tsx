@@ -1146,7 +1146,7 @@ export default function AdminLiveScoring() {
             matchContext: {
               currentScore: currentInnings?.totalRuns || 0,
               wickets: currentInnings?.totalWickets || 0,
-              requiredRuns: match.target ? (match.target - (currentInnings?.totalRuns || 0)) : undefined,
+              requiredRuns: currentInnings?.target ? (currentInnings.target - (currentInnings?.totalRuns || 0)) : undefined,
               oversRemaining: (match.oversLimit || 20) * 6 - (currentInnings?.legalBalls || 0),
               isChase: match.matchPhase === 'SecondInnings'
             },
@@ -1228,17 +1228,17 @@ export default function AdminLiveScoring() {
       // Clear, visible feedback for wicket so scorer knows it executed
       if (payload.kind === 'wicket' && payload.wicket) {
         const outName = playersById.get(payload.wicket.dismissedPlayerId)?.name || 'Batter'
-        const wicketLabel =
-          payload.wicket.type === 'run-out' ? 'Run Out'
-            : payload.wicket.type === 'hit-wicket' ? 'Hit Wicket'
-              : payload.wicket.type === 'obstructing-field' ? 'Obstructing Field'
-                : payload.wicket.type === 'lbw' ? 'LBW'
-                  : payload.wicket.type === 'caught' ? 'Caught'
-                    : payload.wicket.type === 'stumped' ? 'Stumped'
-                      : payload.wicket.type === 'hit-wicket' ? 'Hit Wicket'
-                        : payload.wicket.type === 'obstructing-field' ? 'Obstructing Field'
-                          : payload.wicket.type === 'retired' ? 'Retired'
-                            : 'Bowled'
+        const wicketLabels: Record<string, string> = {
+          'run-out': 'Run Out',
+          'hit-wicket': 'Hit Wicket',
+          'obstructing-field': 'Obstructing Field',
+          'lbw': 'LBW',
+          'caught': 'Caught',
+          'stumped': 'Stumped',
+          'retired': 'Retired',
+          'bowled': 'Bowled'
+        }
+        const wicketLabel = wicketLabels[payload.wicket.type] || 'Out'
         toast(`${outName} OUT (${wicketLabel})`, { icon: '🏏' } as any)
       }
 
@@ -1431,8 +1431,8 @@ export default function AdminLiveScoring() {
     }
   }
 
-  const teamAName = match?.teamAName || match?.teamA || 'Team A'
-  const teamBName = match?.teamBName || match?.teamB || 'Team B'
+  const teamAName = match?.teamAName || 'Team A'
+  const teamBName = match?.teamBName || 'Team B'
   const battingTeam = effectiveCurrentBatting === 'teamA' ? teamAName : teamBName
 
   if (loading) {
@@ -1571,7 +1571,7 @@ export default function AdminLiveScoring() {
                 </div>
                 <div className="flex gap-3 mt-2">
                   <button
-                    onClick={handleUndoBall}
+                    onClick={handleUndoLastBall}
                     disabled={submitting}
                     className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2"
                   >
@@ -1736,7 +1736,6 @@ export default function AdminLiveScoring() {
                         matchId,
                         inningId,
                         text,
-                        timestamp: Timestamp.now(),
                         timestamp: Timestamp.now(),
                         type: 'manual',
                         ballDocId: lastBall?.id || null

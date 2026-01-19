@@ -447,11 +447,11 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
       setMatchView((prev) =>
         prev
           ? ({
-              ...(prev as any),
-              tossWinner: (formData.tossWinner as any) || '',
-              tossDecision: (formData.tossDecision as any) || 'bat',
-              electedTo: (formData.tossDecision as any) || 'bat',
-            } as any)
+            ...(prev as any),
+            tossWinner: (formData.tossWinner as any) || '',
+            tossDecision: (formData.tossDecision as any) || 'bat',
+            electedTo: (formData.tossDecision as any) || 'bat',
+          } as any)
           : prev
       )
     } catch (e) {
@@ -509,14 +509,14 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
       setMatchView((prev) =>
         prev
           ? ({
-              ...(prev as any),
-              teamAPlayingXI,
-              teamBPlayingXI,
-              teamACaptainId: teamACaptainId || '',
-              teamAKeeperId: teamAKeeperId || '',
-              teamBCaptainId: teamBCaptainId || '',
-              teamBKeeperId: teamBKeeperId || '',
-            } as any)
+            ...(prev as any),
+            teamAPlayingXI,
+            teamBPlayingXI,
+            teamACaptainId: teamACaptainId || '',
+            teamAKeeperId: teamAKeeperId || '',
+            teamBCaptainId: teamBCaptainId || '',
+            teamBKeeperId: teamBKeeperId || '',
+          } as any)
           : prev
       )
     } catch (e) {
@@ -617,7 +617,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
         teamAName: resolvedTeamAName,
         teamBName: resolvedTeamBName,
         venue: formData.venue || '',
-        date: Timestamp.fromDate(dateTime),
+        date: Timestamp.fromDate(dateTime) as any,
         time: effectiveTime,
         oversLimit: Number(formData.oversLimit || 20),
         tossWinner: formData.tossWinner || '',
@@ -625,7 +625,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
         electedTo: (formData.tossDecision as any) || 'bat',
         status: (formData.status as any) || 'upcoming',
         createdBy: mode === 'create' ? user?.uid || '' : undefined,
-      } as any)
+      })
 
       if (mode === 'create') {
         await matchService.create(matchData as any)
@@ -710,13 +710,13 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
     try {
       console.log('🗑️ Attempting to delete match:', matchId)
       console.log('👤 Current user:', { uid: user.uid, email: user.email, role: user.role })
-      
+
       // Debug admin permissions before attempting delete
       const { debugAdminPermissions } = await import('@/utils/debugAdmin')
       const debugInfo = await debugAdminPermissions()
       console.log('🔍 Admin Permission Debug:', debugInfo)
       console.log('🔍 Admin Permission Debug (JSON):', JSON.stringify(debugInfo, null, 2))
-      
+
       if (!debugInfo.hasAdminDoc) {
         toast.error(
           <div>
@@ -728,7 +728,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
         )
         return
       }
-      
+
       await matchService.delete(matchId)
       toast.success('Match deleted successfully. Player stats have been updated.')
       loadMatches()
@@ -739,7 +739,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
         message: error.message,
         stack: error.stack,
       })
-      
+
       // Run debug check
       try {
         const { debugAdminPermissions, printAdminDebugInfo } = await import('@/utils/debugAdmin')
@@ -749,7 +749,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
       } catch (debugError) {
         console.error('Debug check failed:', debugError)
       }
-      
+
       // Check if it's a permission error
       if (error.code === 'permission-denied' || error.message?.includes('permission') || error.message?.includes('Permission')) {
         toast.error(
@@ -811,7 +811,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
         time: effectiveTime,
         updatedAt: Timestamp.now(),
       } as any)
-      
+
       toast.success('Match rescheduled successfully!')
       setRescheduleModal({ open: false, match: null })
       loadMatches()
@@ -1439,7 +1439,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                  <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900">
                       {match.teamAName || (match as any).teamA || (match as any).teamAId} vs {match.teamBName || (match as any).teamB || (match as any).teamBId}
                     </h3>
                     <p className="text-sm text-gray-600">{match.venue}</p>
@@ -1498,7 +1498,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
                     const isLive = statusRaw === 'live'
                     const isCompleted = statusRaw === 'completed' || statusRaw === 'finished'
                     const canStart = isUpcoming || (!isLive && !isCompleted)
-                    
+
                     return (
                       <tr key={match.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
@@ -1597,7 +1597,7 @@ export default function AdminMatches({ mode = 'list' }: AdminMatchesProps) {
                 >
                   <div className="mb-4">
                     <h3 className="font-semibold text-gray-900 mb-1">
-                  {match.teamAName || (match as any).teamA || (match as any).teamAId} vs {match.teamBName || (match as any).teamB || (match as any).teamBId}
+                      {match.teamAName || (match as any).teamA || (match as any).teamAId} vs {match.teamBName || (match as any).teamB || (match as any).teamBId}
                     </h3>
                     <p className="text-sm text-gray-600">{match.venue || '—'}</p>
                     <p className="text-xs text-gray-500 mt-1">

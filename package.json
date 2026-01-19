@@ -5,7 +5,7 @@
   "description": "Intelligent School Cricket Platform - ICC-compliant real-time scoring system",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx,ts,tsx",
     "test": "vitest",

@@ -44,14 +44,14 @@ export default function TournamentDetails() {
         // Players map (for key stats) - realtime
         const unsubPlayers = playerService.subscribeAll((list) => {
           const pm = new Map<string, any>()
-          ;(list as any[]).forEach((p) => p?.id && pm.set(p.id, p))
+            ; (list as any[]).forEach((p) => p?.id && pm.set(p.id, p))
           setPlayersById(pm)
         })
 
         // Squads map (for live name resolution everywhere) - realtime
         const unsubSquads = squadService.subscribeAll((list) => {
           const sm = new Map<string, any>()
-          ;(list as any[]).forEach((s) => s?.id && sm.set(s.id, s))
+            ; (list as any[]).forEach((s) => s?.id && sm.set(s.id, s))
           setSquadsById(sm)
         })
 
@@ -78,7 +78,7 @@ export default function TournamentDetails() {
       }
     }
     let cleanup: undefined | (() => void)
-    run().then((c: any) => { cleanup = typeof c === 'function' ? c : undefined }).catch(() => {})
+    run().then((c: any) => { cleanup = typeof c === 'function' ? c : undefined }).catch(() => { })
     return () => cleanup?.()
   }, [tournamentId])
 
@@ -215,7 +215,7 @@ export default function TournamentDetails() {
     }
     inningsMap.forEach((inn) => {
       ;[inn.teamA, inn.teamB].filter(Boolean).forEach((i: any) => {
-        ;(i?.batsmanStats || []).forEach((b: any) => {
+        ; (i?.batsmanStats || []).forEach((b: any) => {
           const pid = String(b.batsmanId || '')
           if (!pid) return
           const prev = bat.get(pid) || { id: pid, name: String(playersById.get(pid)?.name || b.batsmanName || 'Player'), team: getTeam(pid), runs: 0, balls: 0, fifties: 0, hundreds: 0, sixes: 0, sr: 0 }
@@ -228,13 +228,13 @@ export default function TournamentDetails() {
           prev.hundreds += runs >= 100 ? 1 : 0
           bat.set(pid, prev)
         })
-        ;(i?.bowlerStats || []).forEach((bw: any) => {
-          const pid = String(bw.bowlerId || '')
-          if (!pid) return
-          const prev = bowl.get(pid) || { id: pid, name: String(playersById.get(pid)?.name || bw.bowlerName || 'Player'), team: getTeam(pid), wickets: 0 }
-          prev.wickets += Number(bw.wickets || 0)
-          bowl.set(pid, prev)
-        })
+          ; (i?.bowlerStats || []).forEach((bw: any) => {
+            const pid = String(bw.bowlerId || '')
+            if (!pid) return
+            const prev = bowl.get(pid) || { id: pid, name: String(playersById.get(pid)?.name || bw.bowlerName || 'Player'), team: getTeam(pid), wickets: 0 }
+            prev.wickets += Number(bw.wickets || 0)
+            bowl.set(pid, prev)
+          })
       })
     })
     bat.forEach((r) => {
@@ -370,7 +370,7 @@ export default function TournamentDetails() {
                           <div className="font-extrabold text-slate-900 truncate">{aName} vs {bName}</div>
                           <div className="text-sm text-slate-600 mt-1">
                             {done
-                              ? `Result: ${aName} ${inn.teamA.totalRuns}-${inn.teamA.totalWickets} • ${bName} ${inn.teamB.totalRuns}-${inn.teamB.totalWickets}`
+                              ? `Result: ${aName} ${inn?.teamA?.totalRuns || 0}-${inn?.teamA?.totalWickets || 0} • ${bName} ${inn?.teamB?.totalRuns || 0}-${inn?.teamB?.totalWickets || 0}`
                               : dtText || 'Scheduled'}
                           </div>
                         </div>

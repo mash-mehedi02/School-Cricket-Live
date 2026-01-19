@@ -12,6 +12,7 @@ import { Tournament, Squad, Match } from '@/types'
 import { useAuthStore } from '@/store/authStore'
 
 import toast from 'react-hot-toast'
+import { Timestamp } from 'firebase/firestore'
 import { generateGroupFixtures } from '@/engine/tournament/fixtures'
 import { generateKnockoutBracket, generateKnockoutFixtures } from '@/engine/tournament/knockout'
 import TableSkeleton from '@/components/skeletons/TableSkeleton'
@@ -113,7 +114,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
         const groups = (data as any).groups || []
         const groupBySquadId: Record<string, string> = {}
         groups.forEach((g: any) => {
-          ;(g.squadIds || []).forEach((sid: string) => {
+          ; (g.squadIds || []).forEach((sid: string) => {
             groupBySquadId[sid] = g.id
           })
         })
@@ -129,7 +130,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
         })
         const meta = (data as any).participantSquadMeta || {}
         const metaIds = Object.keys(meta || {})
-        
+
         // Ensure all fields are present in the form data
         setFormData(prev => ({
           ...prev, // Spread the default values first
@@ -224,11 +225,11 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
         kind: formData.tournamentType,
         year: formData.year,
         stage: 'group',
-        points: { 
-          win: formData.pointsForWin, 
-          loss: formData.pointsForLoss, 
-          tie: formData.pointsForTie, 
-          noResult: formData.pointsForNoResult 
+        points: {
+          win: formData.pointsForWin,
+          loss: formData.pointsForLoss,
+          tie: formData.pointsForTie,
+          noResult: formData.pointsForNoResult
         },
         ranking: { order: ['points', 'nrr', 'head_to_head', 'wins'] },
         groups: groups.map((g: any) => ({
@@ -279,8 +280,8 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
       if (mode === 'create') {
         await tournamentService.create({
           ...(persistPayload as any),
-          createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-          updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
           createdBy: user?.uid || '',
         } as any)
         toast.success('Tournament created successfully!')
@@ -288,7 +289,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
       } else if (mode === 'edit' && id) {
         await tournamentService.update(id, {
           ...(persistPayload as any),
-          updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+          updatedAt: Timestamp.now(),
         } as any)
         toast.success('Tournament updated successfully!')
         navigate('/admin/tournaments')
@@ -303,7 +304,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
 
   const handleGenerateFixtures = async () => {
     if (!id) return;
-    
+
     setGenerating(true);
     try {
       // Generate fixtures based on tournament configuration
@@ -313,12 +314,12 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
       // Get the tournament config and generate group fixtures
       const config = (tournament as any).config;
       const fixturePlan = generateGroupFixtures(config);
-      
+
       // Create match records for each fixture
       for (const fixture of fixturePlan.matches) {
         // Find the group for this match
         const group = config.groups.find((g: any) => g.id === fixture.groupId);
-        
+
         // Create a match record
         const matchData = {
           tournamentId: id,
@@ -333,7 +334,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
           date: '',
           time: '',
           year: formData.year,
-          startTime: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+          startTime: Timestamp.now(),
           oversLimit: formData.oversLimit,
           ballType: 'white' as const,
           status: 'upcoming' as const,
@@ -350,14 +351,14 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
           currentBowlerId: '',
           lastOverBowlerId: '',
           freeHit: false,
-          createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-          updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
           createdBy: user?.uid || '',
         };
-        
+
         await matchService.create(matchData);
       }
-      
+
       toast.success(`${fixturePlan.matches.length} fixtures generated successfully!`);
       // Reload matches to show the new fixtures
       loadMatches(id);
@@ -371,7 +372,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
 
   const handleGenerateKnockout = async () => {
     if (!id) return;
-    
+
     setGenerating(true);
     try {
       // Validate that tournament exists and has proper configuration
@@ -379,20 +380,20 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
       if (!tournament) {
         throw new Error('Tournament not found');
       }
-      
+
       // Check if group stage is enabled and completed matches exist
-      const groupMatches = matches.filter(m => m.stage === 'group' || !m.stage);
-      const completedGroupMatches = groupMatches.filter(m => m.status === 'Completed' || m.status === 'Finished');
-      
+      const groupMatches = matches.filter(m => (m as any).stage === 'group' || !(m as any).stage);
+      const completedGroupMatches = groupMatches.filter(m => m.status === 'finished' || m.status === 'abandoned');
+
       if (groupMatches.length > 0 && completedGroupMatches.length === 0) {
         toast.error('Group stage matches must be completed before generating knockout fixtures');
         setGenerating(false);
         return;
       }
-      
+
       // Generate knockout stage fixtures based on group results
       await generateKnockoutFixtures(id);
-      
+
       toast.success('Knockout fixtures generated successfully!');
       // Reload matches to show newly generated fixtures
       if (id) {
@@ -426,61 +427,55 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/dashboard`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'dashboard'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'dashboard'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Dashboard
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/groups`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'groups'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'groups'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Groups
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/fixtures`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'fixtures'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'fixtures'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Fixtures
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/knockout`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'knockout'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'knockout'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Knockout
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/standings`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'standings'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'standings'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Standings
           </button>
           <button
             onClick={() => navigate(`/admin/tournaments/${id}/settings`)}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'settings'
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'settings'
                 ? 'border-teal-500 text-teal-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Settings
           </button>
@@ -633,9 +628,8 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                 return (
                   <label
                     key={squad.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
-                      checked ? 'bg-teal-50 border-teal-200' : 'border-gray-200 hover:bg-gray-50'
-                    } cursor-pointer`}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${checked ? 'bg-teal-50 border-teal-200' : 'border-gray-200 hover:bg-gray-50'
+                      } cursor-pointer`}
                   >
                     <input
                       type="checkbox"
@@ -659,9 +653,9 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                     {checked && (
                       <select
                         value={safeGroupBy[squad.id] || gids[0]}
-                        onChange={(e) => setFormData((p) => ({ 
-                          ...p, 
-                          groupBySquadId: { ...safeGroupBy, [squad.id]: e.target.value } 
+                        onChange={(e) => setFormData((p) => ({
+                          ...p,
+                          groupBySquadId: { ...safeGroupBy, [squad.id]: e.target.value }
                         }))}
                         className="px-2 py-1 border border-gray-300 rounded-md text-xs font-bold"
                       >
@@ -705,7 +699,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-semibold text-gray-900"
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Type</div>
@@ -732,7 +726,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                         <option value="priority">Priority</option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Round Format</div>
                       <select
@@ -760,7 +754,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <div className="text-xs font-bold text-gray-500 mb-1">Qualify Count</div>
@@ -786,7 +780,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                         className="w-full px-2 py-1 border border-gray-300 rounded-md text-xs font-bold"
                       />
                     </div>
-                    
+
                     <div className="flex items-center">
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-700">
                         <input
@@ -812,7 +806,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                       </label>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700 mb-1">Teams in Group:</div>
                     {g.squadIds.length === 0 ? (
@@ -828,7 +822,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-xs font-bold text-gray-700 mb-1">Qualification Summary</div>
               <div className="text-xs text-gray-500">
@@ -847,10 +841,10 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
   const renderFixtures = () => {
     console.log('[renderFixtures] Squads data:', squads);
     console.log('[renderFixtures] Matches data:', matches.filter(m => m.tournamentId === id));
-    
+
     // Get all matches for this tournament
     const tournamentMatches = matches.filter(m => m.tournamentId === id);
-    
+
     // Group matches by group
     const groupedMatches: Record<string, Match[]> = {};
     tournamentMatches.forEach(match => {
@@ -921,18 +915,17 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                     groupMatches.map((match: any) => {
                       const teamA = squads.find((s: any) => s.id === match.teamAId)?.name || match.teamAName || 'Team A';
                       const teamB = squads.find((s: any) => s.id === match.teamBId)?.name || match.teamBName || 'Team B';
-                      
+
                       return (
                         <div key={match.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3">
                               <div className="font-semibold text-gray-900 truncate">{teamA} vs {teamB}</div>
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                match.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                match.status === 'live' ? 'bg-red-100 text-red-800' :
-                                match.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${match.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                  match.status === 'live' ? 'bg-red-100 text-red-800' :
+                                    match.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                      'bg-gray-100 text-gray-800'
+                                }`}>
                                 {match.status}
                               </span>
                             </div>
@@ -1019,18 +1012,17 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Knockout Stage</h3>
           <p className="text-gray-500 mb-4">
-            The knockout stage will be generated after the group stage is completed. 
+            The knockout stage will be generated after the group stage is completed.
             Qualified teams will advance based on tournament configuration.
           </p>
           <div className="inline-flex flex-wrap gap-3">
             <button
               onClick={handleGenerateKnockout}
               disabled={generating || formData.status !== 'ongoing'}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
-                formData.status === 'ongoing' 
-                  ? 'bg-purple-600 text-white hover:bg-purple-700' 
+              className={`px-4 py-2 rounded-lg font-semibold transition ${formData.status === 'ongoing'
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               Generate Bracket
             </button>
@@ -1050,11 +1042,11 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
   const renderStandings = () => {
     // Get all matches for this tournament
     const tournamentMatches = matches.filter(m => m.tournamentId === id);
-    
+
     // Calculate standings for each group
     const calculateStandings = () => {
       const standingsMap: Record<string, any[]> = {};
-      
+
       // Initialize standings for each group
       (tournaments.find(t => t.id === id) as any)?.groups?.forEach((group: any) => {
         const groupTeams = group.squadIds.map((squadId: string) => {
@@ -1074,34 +1066,34 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
         });
         standingsMap[group.id] = groupTeams;
       });
-      
+
       // Process matches to calculate results
       tournamentMatches.forEach(match => {
         if (match.status !== 'finished') return; // Only completed matches
-        
+
         const groupId = (match as any).groupId;
         if (!groupId || !standingsMap[groupId]) return;
-        
+
         // This is a simplified calculation - in a real app you'd have actual match results
         // For now, we'll just show the structure
       });
-      
+
       // Sort each group by points and net run rate
       Object.keys(standingsMap).forEach(groupId => {
         standingsMap[groupId].sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
           return b.netRunRate - a.netRunRate; // Simplified NRR comparison
         });
-        
+
         // Assign positions
         standingsMap[groupId].forEach((team, index) => {
           team.position = index + 1;
         });
       });
-      
+
       return standingsMap;
     };
-    
+
     const standings = calculateStandings();
 
     return (
@@ -1244,7 +1236,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
     return (
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Tournament Settings</h2>
-        
+
         <div className="space-y-6">
           <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Tournament Information</h3>
@@ -1267,7 +1259,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
               </div>
             </div>
           </div>
-          
+
           <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Scoring System</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1289,7 +1281,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
               </div>
             </div>
           </div>
-          
+
           <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Qualification Rules</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1303,7 +1295,7 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
               </div>
             </div>
           </div>
-          
+
           <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Actions</h3>
             <div className="flex flex-wrap gap-3">
@@ -1792,13 +1784,12 @@ export default function AdminTournaments({ mode = 'list' }: AdminTournamentsProp
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          tournament.status === 'completed'
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${tournament.status === 'completed'
                             ? 'bg-green-100 text-green-700'
                             : tournament.status === 'ongoing'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
                       >
                         {tournament.status}
                       </span>

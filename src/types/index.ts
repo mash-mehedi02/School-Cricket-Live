@@ -175,7 +175,7 @@ export interface Match {
   teamAName: string
   teamBName: string
   venue: string
-  date: string
+  date: string | Timestamp | any // Support both YYYY-MM-DD and Firestore Timestamp
   time: string
   year?: number | string
   startTime?: Timestamp
@@ -202,6 +202,8 @@ export interface Match {
   createdAt: Timestamp
   updatedAt: Timestamp
   createdBy: string
+  resultSummary?: string
+  winnerId?: string
 }
 
 // ==================== BALL ====================

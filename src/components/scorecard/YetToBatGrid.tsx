@@ -4,7 +4,6 @@
  */
 
 interface YetToBatGridProps {
-  yetToBat: Array<{ playerId: string; name: string }>
   playingXI: Array<{
     playerId?: string
     id?: string
@@ -33,7 +32,7 @@ interface YetToBatGridProps {
   }
 }
 
-const YetToBatGrid = ({ yetToBat, playingXI, batsmanStats, squad }: YetToBatGridProps) => {
+const YetToBatGrid = ({ playingXI, batsmanStats, squad }: YetToBatGridProps) => {
   // Get list of players who have batted (by ID)
   const battedPlayerIds = new Set(
     batsmanStats.map((b) => b.batsmanId).filter(Boolean)

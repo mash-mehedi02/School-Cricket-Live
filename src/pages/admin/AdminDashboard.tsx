@@ -33,7 +33,7 @@ export default function AdminDashboard() {
           matchService.getAll(),
         ])
 
-        const liveMatches = matches.filter(m => m.status === 'live' || m.status === 'Live')
+        const liveMatches = matches.filter(m => m.status === 'live')
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
@@ -204,13 +204,12 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        match.status === 'live' || match.status === 'Live'
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${match.status === 'live'
                           ? 'bg-red-100 text-red-700'
-                          : match.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
+                          : match.status === 'finished' || match.status === 'abandoned'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
                     >
                       {match.status}
                     </span>

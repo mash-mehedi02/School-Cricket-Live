@@ -1,0 +1,225 @@
+﻿src/components/live/CrexActionsBar.tsx(6,1): error TS6133: 'React' is declared but its value is never read.
+src/components/live/CrexHeroScoreboard.tsx(34,3): error TS6133: 'teamAName' is declared but its value is never read.
+src/components/live/CrexHeroScoreboard.tsx(35,3): error TS6133: 'teamBName' is declared but its value is never read.
+src/components/live/CrexHeroScoreboard.tsx(38,3): error TS6133: 'currentInnings' is declared but its value is never read.
+src/components/live/CrexInsightsPanel.tsx(6,8): error TS6133: 'React' is declared but its value is never read.
+src/components/scorecard/CrexScorecardPage.tsx(13,26): error TS7016: Could not find a declaration file for module '../live/BallTimeline'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/src/components/live/BallTimeline.jsx' implicitly has an 'any' type.
+src/components/scorecard/CrexScorecardPage.tsx(14,33): error TS7016: Could not find a declaration file for module '../live/ProjectedScoreTable'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/src/components/live/ProjectedScoreTable.jsx' implicitly has an 'any' type.
+src/components/scorecard/CrexScorecardPage.tsx(42,9): error TS6133: 'bowlingTeam' is declared but its value is never read.
+src/config/firebase.ts(7,56): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/config/firebase.ts(9,52): error TS7016: Could not find a declaration file for module 'firebase/storage'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/storage/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/storage';`
+src/config/firebase.ts(10,56): error TS7016: Could not find a declaration file for module 'firebase/functions'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/functions/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/functions';`
+src/engine/recalculateInnings.ts(7,83): error TS6133: 'Partnership' is declared but its value is never read.
+src/engine/recalculateInnings.ts(21,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/engine/recalculateInnings.ts(64,7): error TS6133: 'lastWicketSequence' is declared but its value is never read.
+src/engine/recalculateInnings.ts(400,17): error TS6133: 'b' is declared but its value is never read.
+src/engine/tournament/knockout.ts(11,3): error TS6196: 'KnockoutConfig' is declared but never used.
+src/engine/tournament/knockout.ts(20,1): error TS6133: 'getAuth' is declared but its value is never read.
+src/pages/admin/AdminDashboard.tsx(36,72): error TS2367: This comparison appears to be unintentional because the types '"upcoming" | "finished" | "abandoned"' and '"Live"' have no overlap.
+src/pages/admin/AdminLiveScoring.tsx(11,103): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminLiveScoring.tsx(46,10): error TS6133: 'suggestedNextBowlerId' is declared but its value is never read.
+src/pages/admin/AdminLiveScoring.tsx(54,10): error TS6133: 'wasUndone' is declared but its value is never read.
+src/pages/admin/AdminLiveScoring.tsx(1138,32): error TS2339: Property 'type' does not exist on type 'Omit<Ball, "id">'.
+src/pages/admin/AdminLiveScoring.tsx(1188,13): error TS6133: 'computed' is declared but its value is never read.
+src/pages/admin/AdminLiveScoring.tsx(1238,25): error TS2367: This comparison appears to be unintentional because the types '"bowled" | "retired"' and '"hit-wicket"' have no overlap.
+src/pages/admin/AdminLiveScoring.tsx(1239,27): error TS2367: This comparison appears to be unintentional because the types '"bowled" | "retired"' and '"obstructing-field"' have no overlap.
+src/pages/admin/AdminLiveScoring.tsx(1366,63): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminLiveScoring.tsx(1372,43): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/admin/AdminLiveScoring.tsx(1372,91): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/pages/admin/AdminLiveScoring.tsx(1372,94): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/pages/admin/AdminLiveScoring.tsx(1569,29): error TS2339: Property 'resultSummary' does not exist on type 'Match'.
+src/pages/admin/AdminMatches.tsx(14,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminPlayers.tsx(12,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminPlayers.tsx(15,29): error TS7016: Could not find a declaration file for module '@/services/cloudinary/uploader'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/src/services/cloudinary/uploader.js' implicitly has an 'any' type.
+src/pages/admin/AdminSquads.tsx(12,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminSquads.tsx(15,29): error TS7016: Could not find a declaration file for module '@/services/cloudinary/uploader'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/src/services/cloudinary/uploader.js' implicitly has an 'any' type.
+src/pages/admin/AdminSquads.tsx(103,44): error TS7006: Parameter 'progress' implicitly has an 'any' type.
+src/pages/admin/AdminTournaments.tsx(15,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/AdminTournaments.tsx(17,10): error TS6133: 'generateKnockoutBracket' is declared but its value is never read.
+src/pages/admin/AdminTournaments.tsx(1188,51): error TS6133: 'index' is declared but its value is never read.
+src/pages/admin/ProfessionalTournamentManager.tsx(13,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/admin/ProfessionalTournamentManager.tsx(61,33): error TS2367: This comparison appears to be unintentional because the types '"groups" | "knockout" | "create" | "edit" | "fixtures" | "standings" | "settings"' and '"list"' have no overlap.
+src/pages/admin/ProfessionalTournamentManager.tsx(328,33): error TS2304: Cannot find name 'MatchStatus'.
+src/pages/Home.tsx(101,10): error TS6133: 'threadOffset' is declared but its value is never read.
+src/pages/MatchLive.tsx(18,29): error TS7016: Could not find a declaration file for module '@/components/live/CrexLiveSection'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/src/components/live/CrexLiveSection.jsx' implicitly has an 'any' type.
+src/pages/MatchLive.tsx(50,10): error TS6133: 'centerEventAnim' is declared but its value is never read.
+src/pages/MatchLive.tsx(456,9): error TS6133: 'canUseLiveTab' is declared but its value is never read.
+src/pages/MatchLive.tsx(1143,25): error TS6133: 'isBoundary' is declared but its value is never read.
+src/pages/SquadDetails.tsx(14,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/pages/Squads.tsx(115,48): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/pages/TournamentDetails.tsx(373,53): error TS18048: 'inn' is possibly 'undefined'.
+src/pages/TournamentDetails.tsx(373,76): error TS18048: 'inn' is possibly 'undefined'.
+src/pages/TournamentDetails.tsx(373,113): error TS18048: 'inn' is possibly 'undefined'.
+src/pages/TournamentDetails.tsx(373,136): error TS18048: 'inn' is possibly 'undefined'.
+src/pages/TournamentKeyStats.tsx(48,10): error TS6133: 'matches' is declared but its value is never read.
+src/pages/TournamentPointsTable.tsx(147,19): error TS6133: 'groupBySquadId' is declared but its value is never read.
+src/pages/TournamentPointsTable.tsx(306,37): error TS7006: Parameter 'sid' implicitly has an 'any' type.
+src/pages/TournamentPointsTable.tsx(332,64): error TS7006: Parameter 'sid' implicitly has an 'any' type.
+src/pages/TournamentPointsTable.tsx(354,11): error TS6133: 'NR' is declared but its value is never read.
+src/pages/TournamentPointsTable.tsx(401,49): error TS7006: Parameter 'sid' implicitly has an 'any' type.
+src/pages/TournamentPointsTable.tsx(528,67): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/ai/aiAnomaly.ts(86,41): error TS2367: This comparison appears to be unintentional because the types '"no-ball"' and '"bye"' have no overlap.
+src/services/ai/aiAnomaly.ts(86,70): error TS2367: This comparison appears to be unintentional because the types '"no-ball"' and '"leg-bye"' have no overlap.
+src/services/ai/aiAnomaly.ts(112,15): error TS6133: 'playerId' is declared but its value is never read.
+src/services/ai/aiAnomaly.ts(246,3): error TS6133: 'matchState' is declared but its value is never read.
+src/services/ai/aiCommentary.ts(290,9): error TS6133: 'isHighlight' is declared but its value is never read.
+src/services/ai/aiCommentary.ts(311,27): error TS7053: Element implicitly has an 'any' type because expression of type 'ToneControl' can't be used to index type '{ normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { ...; }'.
+  Property 'excited' does not exist on type '{ normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; excited: string[]; } | { ...; }'.
+src/services/ai/aiCommentary.ts(364,27): error TS7053: Element implicitly has an 'any' type because expression of type 'ToneControl' can't be used to index type '{ normal: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; } | { normal: string[]; }'.
+  Property 'excited' does not exist on type '{ normal: string[]; } | { normal: string[]; excited: string[]; } | { normal: string[]; } | { normal: string[]; }'.
+src/services/ai/aiCommentary.ts(372,16): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/services/ai/aiCommentary.ts(374,13): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/services/ai/aiCommentary.ts(388,27): error TS7053: Element implicitly has an 'any' type because expression of type 'ToneControl' can't be used to index type '{ normal: string[]; } | { normal: string[]; } | { normal: string[]; } | { normal: string[]; }'.
+  Property 'excited' does not exist on type '{ normal: string[]; } | { normal: string[]; } | { normal: string[]; } | { normal: string[]; }'.
+src/services/ai/aiCommentary.ts(392,16): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/services/ai/aiCommentary.ts(394,13): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/services/ai/aiInsights.ts(87,3): error TS6133: 'matchContext' is declared but its value is never read.
+src/services/ai/aiInsights.ts(200,3): error TS6133: 'matchContext' is declared but its value is never read.
+src/services/ai/aiPlayerOfMatch.ts(58,9): error TS6133: 'balls' is declared but its value is never read.
+src/services/ai/aiPlayerOfMatch.ts(89,9): error TS6133: 'runsConceded' is declared but its value is never read.
+src/services/ai/aiPlayerOfMatch.ts(152,9): error TS6133: 'total' is declared but its value is never read.
+src/services/ai/aiWinPrediction.ts(62,5): error TS6133: 'oversCompleted' is declared but its value is never read.
+src/services/ai/aiWinPrediction.ts(69,5): error TS6133: 'opponentStrength' is declared but its value is never read.
+src/services/ai/winProbabilityEngine.ts(38,5): error TS6133: 'batsmenForm' is declared but its value is never read.
+src/services/commentary/commentaryService.ts(6,82): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/commentary/commentaryService.ts(31,25): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/commentary/commentaryService.ts(32,42): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/commentary/commentaryService.ts(90,60): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/commentary/commentaryService.ts(95,36): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(9,8): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/matches.ts(39,33): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(45,39): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(74,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(77,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(94,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(100,34): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(101,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/matches.ts(101,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/matches.ts(124,26): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(125,26): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(136,26): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(137,26): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(150,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/matches.ts(157,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/matches.ts(190,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/matches.ts(197,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/matches.ts(218,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/matches.ts(240,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/matches.ts(241,37): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/matches.ts(243,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/matches.ts(294,58): error TS7006: Parameter 'ballDoc' implicitly has an 'any' type.
+src/services/firestore/playerMatchStats.ts(1,97): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/playerMatchStats.ts(94,23): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/playerMatchStats.ts(174,49): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/players.ts(6,126): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/players.ts(21,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/players.ts(22,41): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/players.ts(23,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/players.ts(23,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/players.ts(26,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/players.ts(40,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/players.ts(41,41): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/players.ts(42,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/players.ts(42,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/players.ts(45,14): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/players.ts(63,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/players.ts(69,34): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/players.ts(70,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/players.ts(70,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/players.ts(89,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/players.ts(106,18): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/players.ts(107,20): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/players.ts(107,23): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/squads.ts(6,126): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/squads.ts(29,8): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firestore/squads.ts(30,41): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/firestore/squads.ts(31,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/squads.ts(31,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/squads.ts(38,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/squads.ts(52,8): error TS7006: Parameter 'snap' implicitly has an 'any' type.
+src/services/firestore/squads.ts(56,8): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firestore/squads.ts(69,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/squads.ts(75,34): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/squads.ts(76,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/squads.ts(76,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/squads.ts(96,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/squads.ts(105,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/squads.ts(126,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/squads.ts(142,86): error TS2339: Property 'id' does not exist on type 'Omit<Squad, "createdAt" | "id" | "updatedAt">'.
+src/services/firestore/tournaments.ts(6,114): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/firestore/tournaments.ts(20,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/tournaments.ts(26,34): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firestore/tournaments.ts(27,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firestore/tournaments.ts(27,21): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firestore/tournaments.ts(41,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/matchEngine/ballUpdateService.ts(6,27): error TS6133: 'setDoc' is declared but its value is never read.
+src/services/matchEngine/ballUpdateService.ts(6,91): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/matchEngine/ballUpdateService.ts(74,7): error TS2353: Object literal may only specify known properties, and 'innings' does not exist in type 'BallData'.
+src/services/matchEngine/ballUpdateService.ts(80,37): error TS7006: Parameter 'transaction' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(21,8): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/matchEngine/recalculateInnings.ts(318,30): error TS7006: Parameter 'ballDoc' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(339,18): error TS7006: Parameter 'ball' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(341,15): error TS7006: Parameter 'ball' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(341,21): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(625,23): error TS18047: 'target' is possibly 'null'.
+src/services/matchEngine/recalculateInnings.ts(631,43): error TS18047: 'target' is possibly 'null'.
+src/services/matchEngine/recalculateInnings.ts(779,39): error TS7006: Parameter 'transaction' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(837,6): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/matchEngine/recalculateInnings.ts(848,6): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/stats/index.ts(12,1): error TS2308: Module './notOutDetector' has already exported a member named 'MatchContext'. Consider explicitly re-exporting to resolve the ambiguity.
+src/services/stats/index.ts(18,1): error TS2308: Module './seasonAggregator' has already exported a member named 'MatchWithSummary'. Consider explicitly re-exporting to resolve the ambiguity.
+src/services/stats/notOutDetector.ts(74,38): error TS2367: This comparison appears to be unintentional because the types 'false | undefined' and 'true' have no overlap.
+src/services/stats/testUtils.ts(7,1): error TS6133: 'calculateBattingStats' is declared but its value is never read.
+src/services/stats/testUtils.ts(8,1): error TS6133: 'calculateBowlingStats' is declared but its value is never read.
+src/services/stats/testUtils.ts(9,1): error TS6133: 'countMatches' is declared but its value is never read.
+src/services/stats/testUtils.ts(87,45): error TS18047: 'test.expected' is possibly 'null'.
+src/services/stats/validateBallEvent.ts(49,9): error TS6133: 'batRuns' is declared but its value is never read.
+src/services/syncPlayerStats.ts(3,51): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/services/syncPlayerStats.ts(204,29): error TS2339: Property 'upsertPastMatchAndRecompute' does not exist on type '{ subscribeAll(callback: (players: Player[]) => void): () => void; subscribeBySquad(squadId: string, callback: (players: Player[]) => void): () => void; getAll(): Promise<Player[]>; ... 4 more ...; delete(id: string): Promise<...>; }'.
+src/services/syncPlayerStats.ts(227,28): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/syncPlayerStats.ts(228,28): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/services/syncPlayerStats.ts(234,49): error TS2554: Expected 1 arguments, but got 2.
+src/store/authStore.ts(8,37): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/store/authStore.ts(78,13): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/store/authStore.ts(149,17): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/types/index.ts(6,27): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/createAdmin.ts(6,29): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/createAdmin.ts(38,37): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/createAdmin.ts(71,37): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/date.ts(6,32): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/debugAdmin.ts(7,29): error TS7016: Could not find a declaration file for module 'firebase/firestore'. 'D:/Programming/Project/SMA Cricket Project/School Cricket/node_modules/firebase/firestore/dist/esm/index.esm.js' implicitly has an 'any' type.
+  If the 'firebase' package actually exposes this module, try adding a new declaration (.d.ts) file containing `declare module 'firebase/firestore';`
+src/utils/icc-rules.ts(6,16): error TS6133: 'BallExtras' is declared but its value is never read.
+src/utils/scorecardFormatters.ts(38,3): error TS6133: 'dismissedBy' is declared but its value is never read.
