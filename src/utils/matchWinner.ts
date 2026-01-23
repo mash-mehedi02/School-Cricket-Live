@@ -24,6 +24,10 @@ export function calculateMatchWinner(
 
   if (!teamAInnings || !teamBInnings) return defaultResult
 
+  // Only calculate winner if match is actually finished
+  const status = String(match?.status || '').toLowerCase()
+  if (status !== 'finished' && status !== 'completed' && match) return defaultResult
+
   const aRuns = Number(teamAInnings.totalRuns || 0)
   const bRuns = Number(teamBInnings.totalRuns || 0)
 

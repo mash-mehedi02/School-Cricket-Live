@@ -17,6 +17,7 @@ import MatchLiveSkeleton from '@/components/skeletons/MatchLiveSkeleton'
 import { subscribeToCommentary, type CommentaryEntry } from '@/services/commentary/commentaryService'
 import CrexLiveSection from '@/components/live/CrexLiveSection'
 import BallEventDisplay from '@/components/live/BallEventDisplay'
+import MatchLiveHero from '@/components/live/MatchLiveHero'
 // Import all match page components to render inline
 import MatchScorecard from '@/pages/MatchScorecard'
 import MatchPlayingXI from '@/pages/MatchPlayingXI'
@@ -46,10 +47,39 @@ export default function MatchLive() {
   const [activeTab, setActiveTab] = useState('summary') // Upcoming should land on Summary by default
   const didInitTab = useRef(false)
   const [now, setNow] = useState<Date>(() => new Date())
-  const [centerEventText, setCenterEventText] = useState<string>('Over')
+  const [centerEventText, setCenterEventText] = useState<string>('')
   const [centerEventAnim, setCenterEventAnim] = useState(false)
   const [ballAnimating, setBallAnimating] = useState(false)
   const [ballEventType, setBallEventType] = useState<'4' | '6' | 'wicket' | 'normal'>('normal')
+
+  // --- Match status and derived data (Must be declared before hooks) ---
+  const statusLower = String(match?.status || '').toLowerCase()
+  const isLiveMatch = statusLower === 'live'
+  const isUpcomingMatch = statusLower === '' || statusLower === 'upcoming' || statusLower === 'scheduled'
+  const isFinishedMatch = statusLower === 'finished' || statusLower === 'completed'
+
+  const resolveSquadName = (m: any, side: 'A' | 'B') => {
+    const sidRaw = side === 'A'
+      ? (m.teamAId || m.teamASquadId || m.teamA)
+      : (m.teamBId || m.teamBSquadId || m.teamB)
+    const sid = String(sidRaw || '').trim()
+    const fromSquad = String(squadsById.get(sid)?.name || squadsById.get(sid)?.teamName || '').trim()
+    if (fromSquad) return fromSquad
+    if (side === 'A') return String(m.teamAName || m.teamA || m.teamAId || 'Team A')
+    return String(m.teamBName || m.teamB || m.teamBId || 'Team B')
+  }
+  const teamAName = match ? resolveSquadName(match as any, 'A') : 'Team A'
+  const teamBName = match ? resolveSquadName(match as any, 'B') : 'Team B'
+
+  const resolveSquad = (m: any, side: 'A' | 'B') => {
+    const sidRaw = side === 'A'
+      ? (m.teamAId || m.teamASquadId || m.teamA)
+      : (m.teamBId || m.teamBSquadId || m.teamB)
+    const sid = String(sidRaw || '').trim()
+    return squadsById.get(sid)
+  }
+  const teamASquad = match ? resolveSquad(match as any, 'A') : null
+  const teamBSquad = match ? resolveSquad(match as any, 'B') : null
 
   // Load match and subscribe
   useEffect(() => {
@@ -278,6 +308,25 @@ export default function MatchLive() {
     }
   }, [currentInnings, playersMap])
 
+  const lastWicket = useMemo(() => {
+    if (!currentInnings || !currentInnings.fallOfWickets || currentInnings.fallOfWickets.length === 0) return null
+    const lastFow = currentInnings.fallOfWickets[currentInnings.fallOfWickets.length - 1]
+    const playerStats = currentInnings.batsmanStats?.find(b => b.batsmanId === lastFow.batsmanId)
+
+    // If we have player stats, use them (has runs/balls). If not, fallback to FOW object.
+    // Also attach the FOW team score if needed, but primarily we want individual stats.
+    if (playerStats) return playerStats
+
+    // Fallback: If player stats not found, try to resolve name from playersMap
+    const player = playersMap.get(lastFow.batsmanId)
+    return {
+      ...lastFow,
+      batsmanName: lastFow.batsmanName || player?.name || 'Batter',
+      runs: 0, // Fallback as FOW runs = team score, which is wrong for individual display
+      balls: 0
+    }
+  }, [currentInnings, playersMap])
+
   const lastBallDoc = useMemo(() => {
     return Array.isArray(balls) && balls.length > 0 ? (balls[balls.length - 1] as any) : null
   }, [balls])
@@ -291,60 +340,159 @@ export default function MatchLive() {
     return k.toUpperCase()
   }
 
-  const computeCenterLabel = (ball: any, innLastFallback: any) => {
-    if (!ball) {
-      const fallbackRaw = String(innLastFallback?.value || '').trim()
-      if (!fallbackRaw) return 'Over'
-      return fallbackRaw === '·' ? '0' : fallbackRaw
+  const computeCenterLabel = (ballDoc: any, innLast: any) => {
+    // If we have real-time over balls, prioritize those for the primary label
+    if (innLast) {
+      const rawValue = String(innLast.value || '').trim()
+      const type = String(innLast.type || '').toLowerCase()
+
+      // Basic formatting for common types if they aren't already pretty
+      if (type === 'wide') {
+        if (rawValue.toUpperCase() === 'WD' || rawValue === '0' || !rawValue) return 'WIDE'
+        if (/^\d+$/.test(rawValue)) return `WIDE+${rawValue}`
+        return rawValue.toUpperCase()
+      }
+      if (type === 'no-ball' || type === 'noball') {
+        if (rawValue.toUpperCase() === 'NB' || rawValue === '0' || !rawValue) return 'NO BALL'
+        // If it's just runs (e.g. "4"), show "NO BALL + 4"
+        if (/^\d+$/.test(rawValue)) return `NO BALL + ${rawValue}`
+        return rawValue.toUpperCase()
+      }
+      if (type === 'wicket') {
+        // Fallback to prettyWicket only if we can't find a better label
+        return rawValue || 'OUT'
+      }
+
+      if (!rawValue) return ''
+      return rawValue === '·' ? '0' : rawValue
     }
-    const extras = (ball?.extras || {}) as any
-    const type = String(ball?.type || '').toLowerCase()
+
+    // Fallback to polling-based ballDoc if no real-time innings ball found
+    if (!ballDoc) return ''
+
+    const extras = (ballDoc?.extras || {}) as any
+    const type = String(ballDoc?.type || '').toLowerCase()
     const isWide = Number(extras?.wides || 0) > 0 || type === 'wide'
     const isNoBall = Number(extras?.noBalls || 0) > 0 || type === 'no-ball' || type === 'noball'
-    const isWicket = Boolean(ball?.wicket)
-    if (isWicket) return prettyWicket(String(ball?.wicket?.type || ''))
-    if (isWide) return 'WIDE'
+    const isWicket = Boolean(ballDoc?.wicket)
+
+    if (isWicket) return prettyWicket(String(ballDoc?.wicket?.type || ''))
+    if (isWide) {
+      const byes = Number(extras?.byes || 0)
+      const legByes = Number(extras?.legByes || 0)
+      const additionalRuns = byes + legByes
+      return additionalRuns > 0 ? `WIDE+${additionalRuns}` : 'WIDE'
+    }
     if (isNoBall) {
-      const total = Number(ball?.totalRuns || 0)
-      const extraRuns = Math.max(0, total - 1) // total = 1 (no-ball) + additional runs
+      const total = Number(ballDoc?.totalRuns || 0)
+      const extraRuns = Math.max(0, total - 1)
       return extraRuns > 0 ? `NO BALL + ${extraRuns}` : 'NO BALL'
     }
-    const badge = String(ball?.badge || '').trim()
+    const badge = String(ballDoc?.badge || '').trim()
     if (badge) return badge
-    const fallbackRaw = String(innLastFallback?.value || '').trim()
-    const raw = fallbackRaw || String(ball?.value || '').trim()
-    if (!raw) return 'Over'
+    const raw = String(ballDoc?.value || '').trim()
+    if (!raw) return ''
     if (raw === '·' || raw === '0') return '0'
     return raw
   }
+
+  const [showBoundaryAnim, setShowBoundaryAnim] = useState(false)
 
   // Center event animation sequence:
   // - no-ball: show "NO BALL (+X)" then switch to "FREE HIT"
   // - otherwise: show immediate label
   useEffect(() => {
     const inn: any = currentInnings
-    const innLast = (inn?.currentOverBalls && inn.currentOverBalls.length > 0)
+
+    // 1. Find the "True" last ball for the label
+    // If currentOverBalls exists, use it.
+    // If we just reached an over boundary (e.g. 1.0) and currentOverBalls is empty/cleared, 
+    // we look into the last ball of the last element in recentOvers.
+
+    let innLast = (inn?.currentOverBalls && inn.currentOverBalls.length > 0)
       ? inn.currentOverBalls[inn.currentOverBalls.length - 1]
       : null
+
+    const totalLegalBalls = Number(inn?.legalBalls || 0)
+    const isAtOverBoundary = totalLegalBalls > 0 && totalLegalBalls % 6 === 0
+
+    if (!innLast && isAtOverBoundary && inn?.recentOvers?.length > 0) {
+      const lastOver = inn.recentOvers[inn.recentOvers.length - 1]
+      const ballsInOver = lastOver?.balls || lastOver?.deliveries || []
+      if (ballsInOver.length > 0) {
+        innLast = ballsInOver[ballsInOver.length - 1]
+      }
+    }
+
     const base = computeCenterLabel(lastBallDoc, innLast)
 
+    // 2. Wicket/Boundary flags for animation
+    const isWicket = String(base || '').toUpperCase().includes('OUT') || String(base || '').toUpperCase() === 'W'
     const extras = (lastBallDoc?.extras || {}) as any
     const type = String(lastBallDoc?.type || '').toLowerCase()
     const isNoBall = Boolean(lastBallDoc) && (Number(extras?.noBalls || 0) > 0 || type === 'no-ball' || type === 'noball')
-    const isWicket = Boolean(lastBallDoc?.wicket)
 
     let t1: any = null
     let t2: any = null
+    let t3: any = null
+    let t4: any = null
     let intervalId: any = null
     const bump = () => {
       setCenterEventAnim(true)
       t2 = window.setTimeout(() => setCenterEventAnim(false), 260)
     }
 
-    setCenterEventText(base || 'Over')
+    // Clear display after delay, but handle special states like Innings Break or Match Finished
+    const wickets = Number(inn?.totalWickets || 0)
+    const oversLimit = Number(match?.oversLimit || 20)
+    const isAllOut = wickets >= 10
+    const isOversFinished = totalLegalBalls >= oversLimit * 6
+    const isInningsEnded = isAllOut || isOversFinished
+
+    // Detect if we should show Innings Break or Match Completed
+    if (isFinishedMatch) {
+      setCenterEventText('MATCH COMPLETED')
+    } else if (isInningsEnded) {
+      const rr = Number(inn?.currentRunRate || 0).toFixed(2)
+      setCenterEventText(`INNINGS BREAK\\nRR: ${rr}`)
+    } else {
+      setCenterEventText(base || '')
+
+      // RESET boundary animation state first to avoid carrying over from previous ball
+      setShowBoundaryAnim(false)
+
+      // Trigger Boundary Animation for 4/6
+      const cleanBase = String(base || '').trim()
+      if (cleanBase === '4' || cleanBase === '6') {
+        setShowBoundaryAnim(true)
+        if (t3) window.clearTimeout(t3)
+        t3 = window.setTimeout(() => setShowBoundaryAnim(false), 2000)
+      }
+
+      // Check if over is complete by counting legal balls in current over or scoreboard state
+      const currentOverBalls = inn?.currentOverBalls || []
+      const legalBallsInOver = currentOverBalls.filter((b: any) => {
+        const bExtras = b?.extras || {}
+        const bType = String(b?.type || '').toLowerCase()
+        const isWide = Number(bExtras?.wides || 0) > 0 || bType === 'wide'
+        const isNB = Number(bExtras?.noBalls || 0) > 0 || bType === 'no-ball' || bType === 'noball'
+        return !isWide && !isNB
+      }).length
+
+      if (!isInningsEnded && !isFinishedMatch) {
+        if (legalBallsInOver === 6 || isAtOverBoundary) {
+          if (t4) window.clearTimeout(t4)
+          t4 = window.setTimeout(() => {
+            setCenterEventText('OVER')
+          }, 5000)
+        }
+      }
+
+    }
+
     bump()
 
-    if (isNoBall && !isWicket) {
+    if (isNoBall && !isWicket && !isInningsEnded && !isFinishedMatch) {
       // Keep toggling: NO BALL (+X) <-> FREE HIT every 2s
       let showFreeHit = false
       intervalId = window.setInterval(() => {
@@ -357,40 +505,19 @@ export default function MatchLive() {
     return () => {
       if (t1) window.clearTimeout(t1)
       if (t2) window.clearTimeout(t2)
+      if (t3) window.clearTimeout(t3)
+      if (t4) window.clearTimeout(t4)
       if (intervalId) window.clearInterval(intervalId)
     }
-  }, [lastBallDoc?.id, lastBallDoc?.sequence, currentInnings])
-
-  // Calculate team names and chasing status (before early returns)
-  const resolveSquadName = (m: any, side: 'A' | 'B') => {
-    const sidRaw = side === 'A'
-      ? (m.teamAId || m.teamASquadId || m.teamA)
-      : (m.teamBId || m.teamBSquadId || m.teamB)
-    const sid = String(sidRaw || '').trim()
-    const fromSquad = String(squadsById.get(sid)?.name || squadsById.get(sid)?.teamName || '').trim()
-    if (fromSquad) return fromSquad
-    if (side === 'A') return String(m.teamAName || m.teamA || m.teamAId || 'Team A')
-    return String(m.teamBName || m.teamB || m.teamBId || 'Team B')
-  }
-  const teamAName = match ? resolveSquadName(match as any, 'A') : 'Team A'
-  const teamBName = match ? resolveSquadName(match as any, 'B') : 'Team B'
-
-  // Resolve full squad objects for logos/details
-  const resolveSquad = (m: any, side: 'A' | 'B') => {
-    const sidRaw = side === 'A'
-      ? (m.teamAId || m.teamASquadId || m.teamA)
-      : (m.teamBId || m.teamBSquadId || m.teamB)
-    const sid = String(sidRaw || '').trim()
-    return squadsById.get(sid)
-  }
-  const teamASquad = match ? resolveSquad(match as any, 'A') : null
-  const teamBSquad = match ? resolveSquad(match as any, 'B') : null
-
-  // Match status flags (must be declared before any hook deps use them)
-  const statusLower = String(match?.status || '').toLowerCase()
-  const isLiveMatch = statusLower === 'live'
-  const isUpcomingMatch = statusLower === '' || statusLower === 'upcoming' || statusLower === 'scheduled'
-  const isFinishedMatch = statusLower === 'finished' || statusLower === 'completed'
+  }, [
+    lastBallDoc?.id,
+    lastBallDoc?.sequence,
+    currentInnings?.inningId,
+    currentInnings?.legalBalls,
+    currentInnings?.totalRuns,
+    currentInnings?.totalWickets,
+    isFinishedMatch
+  ])
 
   const xiCountA = Number((match as any)?.teamAPlayingXI?.length || 0)
   const xiCountB = Number((match as any)?.teamBPlayingXI?.length || 0)
@@ -460,21 +587,21 @@ export default function MatchLive() {
     return getMatchResultString(teamAName, teamBName, teamAInnings, teamBInnings, match || undefined)
   }, [match, teamAInnings, teamBInnings, teamAName, teamBName])
 
-  // Commentary (live only) - lightweight feed used by CrexLiveSection
+  // Commentary - lightweight feed used by CrexLiveSection
   useEffect(() => {
-    if (!matchId) return
-    if (!match) return
-    if (!isLiveMatch) {
+    if (!matchId || !match) return
+
+    if (isUpcomingMatch && !isLiveEffective) {
       setCommentary([])
       return
     }
-    const inningId = (match.currentBatting || 'teamA') as 'teamA' | 'teamB'
+
+    // Show all commentary for the match (both innings)
     const unsub = subscribeToCommentary(matchId, (entries) => {
-      const filtered = entries.filter((e) => !e.inningId || e.inningId === inningId)
-      setCommentary(filtered)
+      setCommentary(entries)
     })
     return () => unsub()
-  }, [matchId, match, isLiveMatch])
+  }, [matchId, match?.status, isUpcomingMatch, isLiveEffective])
 
   const squadIdByLowerName = useMemo(() => {
     const m = new Map<string, string>()
@@ -1092,222 +1219,27 @@ export default function MatchLive() {
         if (isUpcomingMatch && !isPastStart) return renderUpcoming()
         return (
           <div className="bg-gray-50 min-h-screen">
-            {/* CREX/BBL style dark header */}
-            < div className="bg-gradient-to-r from-[#1a1f3c] via-[#1e2345] to-[#1a1f3c] text-white border-b border-white/5 relative overflow-hidden" >
-              {/* Background Glow */}
-              < div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(56,189,248,0.1),transparent_50%)]" />
-
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-10">
-                {/* Top Row: Status & Venue */}
-                <div className="flex items-center justify-between mb-6 text-xs font-bold tracking-wider">
-                  <div className="flex items-center gap-2">
-                    {isFinishedMatch ? (
-                      <div className="px-3 py-1 bg-emerald-500/20 rounded-full border border-emerald-500/30 backdrop-blur-sm flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-emerald-400 font-black uppercase tracking-[0.1em]">Completed</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="relative flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
-                        </span>
-                        <span className="text-white/90 tracking-widest">LIVE</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-white/40 font-black uppercase tracking-[0.2em]">{match.venue || 'VENUE TBD'}</div>
-                </div>
-
-                {(() => {
-                  const inn: any = currentInnings
-                  const runs = Number(inn?.totalRuns || 0)
-                  const wkts = Number(inn?.totalWickets || 0)
-                  const overs = String(inn?.overs || '0.0')
-                  const crr = typeof inn?.currentRunRate === 'number' ? inn.currentRunRate : Number(inn?.currentRunRate || 0)
-                  const rrr = typeof inn?.requiredRunRate === 'number' ? inn.requiredRunRate : Number(inn?.requiredRunRate || 0)
-                  const target = inn?.target
-
-                  const currentTeamName = match.currentBatting === 'teamB' ? teamBName : teamAName
-
-                  // Toss Logic
-                  const tossWinner = String((match as any)?.tossWinner || '').trim()
-                  const tossDecision = String((match as any)?.tossDecision || (match as any)?.electedTo || '').trim().toLowerCase()
-                  const tossText = tossWinner && tossDecision
-                    ? `${tossWinner === 'teamA' ? teamAName : teamBName} Opt to ${tossDecision}`
-                    : ''
-
-                  // Center Event calculation
-                  const eventLabel = isFinishedMatch ? (centerEventText || '—') : (centerEventText || '—')
-                  const isBoundary = eventLabel === '4' || eventLabel === '6'
-                  const isWicket = eventLabel.includes('OUT')
-
-                  if (isFinishedMatch) {
-                    const scoreA = `${teamAInnings?.totalRuns || 0}-${teamAInnings?.totalWickets || 0}`
-                    const scoreB = `${teamBInnings?.totalRuns || 0}-${teamBInnings?.totalWickets || 0}`
-                    const logoA = teamASquad?.logoUrl || (match as any).teamALogoUrl
-                    const logoB = teamBSquad?.logoUrl || (match as any).teamBLogoUrl
-
-                    return (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <div className="relative bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-2xl overflow-hidden">
-                          {/* Background Glow */}
-                          <div className="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
-
-                          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
-                            {/* Score Row */}
-                            <div className="flex items-center gap-6 md:gap-8 grow">
-                              {/* Team A */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center p-1.5 shadow-lg">
-                                  {logoA ? <img src={logoA} className="w-full h-full object-contain" alt={teamAName} /> : <span className="text-sm font-black text-white/20 uppercase">{teamAName.charAt(0)}</span>}
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-[10px] font-black text-white/40 uppercase tracking-tighter leading-none mb-1">{teamAName}</div>
-                                  <div className="flex items-baseline gap-1.5 justify-end">
-                                    <div className="text-xl md:text-2xl font-black text-white tracking-tighter leading-none">{scoreA}</div>
-                                    <div className="text-[10px] font-bold text-white/30 lowercase">({teamAInnings?.overs || '0.0'})</div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* VS divider */}
-                              <div className="h-8 w-px bg-white/10 hidden md:block"></div>
-                              <div className="text-[10px] font-black text-white/20 md:hidden">VS</div>
-
-                              {/* Team B */}
-                              <div className="flex items-center gap-3">
-                                <div className="text-left">
-                                  <div className="text-[10px] font-black text-white/40 uppercase tracking-tighter leading-none mb-1">{teamBName}</div>
-                                  <div className="flex items-baseline gap-1.5">
-                                    <div className="text-xl md:text-2xl font-black text-white tracking-tighter leading-none">{scoreB}</div>
-                                    <div className="text-[10px] font-bold text-white/30 lowercase">({teamBInnings?.overs || '0.0'})</div>
-                                  </div>
-                                </div>
-                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center p-1.5 shadow-lg">
-                                  {logoB ? <img src={logoB} className="w-full h-full object-contain" alt={teamBName} /> : <span className="text-sm font-black text-white/20 uppercase">{teamBName.charAt(0)}</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Result Text */}
-                            <div className="md:border-l md:border-white/10 md:pl-8 md:min-w-[300px] text-center md:text-left py-2 md:py-0">
-                              <div className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1 leading-none">Match Result</div>
-                              <h2 className="text-sm md:text-lg font-black text-white leading-tight drop-shadow-md decoration-emerald-500/30">
-                                {resultSummary}
-                              </h2>
-                            </div>
-                          </div>
-
-                          {/* Toss Info Strip */}
-                          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
-                            <div className="text-white/30 flex items-center gap-2">
-                              {tossText && <span>{tossText}</span>}
-                            </div>
-                            {target && (
-                              <div className="text-white/40 font-black">
-                                Target: <span className="text-white">{target}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <div>
-                      {/* SPLIT HEADER DESIGN */}
-                      <div className={`flex items-center relative max-w-full h-24 mb-0 transition-all duration-300 ${ballAnimating
-                        ? ballEventType === '4'
-                          ? 'ring-2 ring-blue-400/60 shadow-[0_0_15px_rgba(96,165,250,0.3)]'
-                          : ballEventType === '6'
-                            ? 'ring-2 ring-emerald-400/60 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                            : ballEventType === 'wicket'
-                              ? 'ring-2 ring-red-400/60 shadow-[0_0_15px_rgba(248,113,113,0.3)]'
-                              : ''
-                        : ''
-                        }`}>
-                        {/* LEFT: Team, Score, Overs (60%) */}
-                        <div className="w-[60%] flex items-center gap-2 md:gap-4 pr-2 h-full">
-                          {/* Logo */}
-                          <div className="relative flex-shrink-0">
-                            {(() => {
-                              const currentSquad = match.currentBatting === 'teamB' ? teamBSquad : teamASquad
-                              const logoUrl = currentSquad?.logoUrl || (match as any)[match.currentBatting === 'teamB' ? 'teamBLogoUrl' : 'teamALogoUrl']
-                              return logoUrl ? (
-                                <img
-                                  src={logoUrl}
-                                  alt={currentTeamName}
-                                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-20 md:h-20 rounded-full object-cover border-2 border-white/10 shadow-lg bg-white/5"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-2 border-white/10 flex items-center justify-center text-lg md:text-2xl font-bold text-white/40 shadow-inner">
-                                  {currentTeamName.charAt(0)}
-                                </div>
-                              )
-                            })()}
-                          </div>
-
-                          <div className="flex flex-col min-w-0 overflow-hidden w-full">
-                            <div className="text-base sm:text-lg md:text-2xl font-bold text-white tracking-wide uppercase mb-0.5 md:mb-1 drop-shadow-sm leading-none truncate pr-1">
-                              {currentTeamName}
-                            </div>
-                            <div className="flex items-baseline gap-1.5 md:gap-3">
-                              <div className="text-3xl sm:text-4xl md:text-7xl font-black text-white leading-none tracking-tight drop-shadow-lg whitespace-nowrap">
-                                {runs}<span className="text-white/30 text-xl md:text-4xl align-top mx-0.5 md:mx-1">-</span>{wkts}
-                              </div>
-                              <div className="text-xs sm:text-sm md:text-2xl font-bold text-white/50 lowercase self-end mb-0.5 md:mb-1 whitespace-nowrap">
-                                {overs}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* CENTER DIVIDER - ABSOLUTE FIXED POSITION AT 60% */}
-                        <div className="absolute left-[60%] top-1/2 -translate-y-1/2 h-16 w-px bg-gradient-to-b from-transparent via-white/40 to-transparent shadow-[0_0_10px_rgba(255,255,255,0.3)] z-10" />
-
-                        {/* RIGHT: Current Ball Event (40%) - Animated */}
-                        <div className="w-[40%] pl-2 h-full flex flex-col justify-center items-center relative">
-                          <BallEventDisplay
-                            eventLabel={eventLabel}
-                            isWicket={isWicket}
-                            ballId={lastBallDoc?.id}
-                            onAnimationStateChange={(animating, eventType) => {
-                              setBallAnimating(animating)
-                              setBallEventType(eventType)
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* BOTTOM ROW: CRR, RRR, Target/Toss */}
-                      <div className="flex items-center justify-between pt-4 border-t border-white/5 text-sm md:text-base font-medium">
-                        <div className="flex gap-8 text-white/50 uppercase tracking-widest text-xs font-bold">
-                          <div>
-                            CRR: <span className="text-white text-base ml-1">{Number.isFinite(crr) ? crr.toFixed(2) : '0.00'}</span>
-                          </div>
-                          {target && (
-                            <div>
-                              RRR: <span className="text-white text-base ml-1">{Number.isFinite(rrr) ? rrr.toFixed(2) : '0.00'}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="text-white/70 font-semibold">
-                          {target ? (
-                            <span className="bg-white/10 px-3 py-1 rounded-full text-xs uppercase tracking-wide">Target: <span className="text-white">{target}</span></span>
-                          ) : (
-                            <span className="uppercase tracking-wide text-xs opacity-70">{tossText}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            </div >
+            {/* CREX/BBL style dark header + Timeline */}
+            <MatchLiveHero
+              match={match}
+              teamAName={teamAName}
+              teamBName={teamBName}
+              teamASquad={teamASquad}
+              teamBSquad={teamBSquad}
+              currentInnings={currentInnings}
+              teamAInnings={teamAInnings}
+              teamBInnings={teamBInnings}
+              isFinishedMatch={isFinishedMatch}
+              resultSummary={resultSummary}
+              centerEventText={centerEventText || '—'}
+              showBoundaryAnim={showBoundaryAnim}
+              ballAnimating={ballAnimating}
+              ballEventType={ballEventType}
+              lastBall={lastBallDoc}
+              recentOvers={(currentInnings as any)?.recentOvers || []}
+              setBallAnimating={setBallAnimating}
+              setBallEventType={setBallEventType}
+            />
 
             {/* Main live body (BBL-style) */}
             < CrexLiveSection
@@ -1317,7 +1249,7 @@ export default function MatchLive() {
               currentBowler={bowler as any}
               partnership={(currentInnings as any)?.partnership
               }
-              lastWicket={(currentInnings as any)?.fallOfWickets?.[(currentInnings as any)?.fallOfWickets?.length - 1]}
+              lastWicket={lastWicket}
               recentOvers={(currentInnings as any)?.recentOvers || []}
               commentary={commentary as any}
               activeCommentaryFilter={activeCommentaryFilter as any}

@@ -12,7 +12,7 @@ import { doc, collection, addDoc, query, orderBy, limit, getDocs, Timestamp, set
 import { db } from '@/config/firebase'
 import { COLLECTIONS, SUBCOLLECTIONS } from '@/services/firestore/collections'
 import toast from 'react-hot-toast'
-import { recalculateInnings } from '@/engine/recalculateInnings'
+import { recalculateInnings, parseBallEvent } from '@/services/matchEngine/recalculateInnings'
 import { generateCommentary } from '@/services/ai/aiCommentary' // RESTORED
 
 import { deleteCommentaryForBall } from '@/services/commentary/commentaryService'
@@ -676,9 +676,12 @@ export default function AdminLiveScoring() {
 
   const recomputeAndSave = async (
     ballsOverride?: Ball[],
-    preferredNext?: { slot: 'striker' | 'nonStriker'; playerId: string },
-    nextFreeHit?: boolean,
-    bowlerOverride?: string,
+    overrides?: {
+      strikerId?: string;
+      nonStrikerId?: string;
+      bowlerId?: string;
+      nextFreeHit?: boolean;
+    }
   ): Promise<InningsStats | null> => {
     if (!matchId || !match) return null
 
@@ -699,16 +702,14 @@ export default function AdminLiveScoring() {
       }
       return fh
     }
-    const effectiveNextFreeHit = typeof nextFreeHit === 'boolean' ? nextFreeHit : computeNextFreeHitFromBalls(balls)
-    const computed = recalculateInnings({
-      balls,
-      matchId,
-      inningId,
+    const effectiveNextFreeHit = typeof overrides?.nextFreeHit === 'boolean' ? overrides.nextFreeHit : computeNextFreeHitFromBalls(balls)
+    const computed = await recalculateInnings(matchId, inningId, {
+      balls: balls.map(b => parseBallEvent(b)),
       matchData: {
         oversLimit: match.oversLimit || 20,
-        currentStrikerId: (match as any).currentStrikerId || selectedStriker,
-        currentNonStrikerId: (match as any).currentNonStrikerId || selectedNonStriker,
-        currentBowlerId: bowlerOverride || (match as any).currentBowlerId || selectedBowler,
+        currentStrikerId: overrides?.strikerId !== undefined ? overrides.strikerId : ((match as any).currentStrikerId || selectedStriker),
+        currentNonStrikerId: overrides?.nonStrikerId !== undefined ? overrides.nonStrikerId : ((match as any).currentNonStrikerId || selectedNonStriker),
+        currentBowlerId: overrides?.bowlerId || (match as any).currentBowlerId || selectedBowler,
         target: (currentInnings as any)?.target,
       },
     })
@@ -725,20 +726,10 @@ export default function AdminLiveScoring() {
       }
     }
 
-    if (preferredNext?.playerId) {
-      const pid = preferredNext.playerId
-      const other =
-        preferredNext.slot === 'striker'
-          ? String((computed as any).nonStrikerId || '')
-          : String(computed.currentStrikerId || '')
-      if (pid && pid !== other) {
-        if (preferredNext.slot === 'striker' && !computed.currentStrikerId) computed.currentStrikerId = pid
-        if (preferredNext.slot === 'nonStriker' && !(computed as any).nonStrikerId) { (computed as any).nonStrikerId = pid }
-      }
-    }
-
+    // Simplified suggestions logic without relying on preferredNext
     const initialNextStriker = computed.currentStrikerId || ''
     const initialNextNonStriker = (computed as any).nonStrikerId || ''
+
     if (!initialNextStriker || !initialNextNonStriker) {
       const excludeBase = [initialNextStriker, initialNextNonStriker].filter(Boolean)
       const suggestedForStriker = !initialNextStriker ? suggestNextBatter(balls, excludeBase) : ''
@@ -866,6 +857,14 @@ export default function AdminLiveScoring() {
         setSelectedStriker(''); setSelectedNonStriker(''); setSelectedBowler('');
         setIsRotated(false); setRotationApplied(false);
         toast('Innings complete. 2nd innings starting.', { icon: '⏸️' } as any)
+
+        // Update local state immediately for the completed innings
+        if (inningId === effectiveCurrentBatting) {
+          setCurrentInnings(computed)
+        }
+        if (inningId === 'teamA') setTeamAInnings(computed)
+        if (inningId === 'teamB') setTeamBInnings(computed)
+
         return computed
       } else {
         // MATCH FINISHED
@@ -915,6 +914,15 @@ export default function AdminLiveScoring() {
         setIsFreeHit(false)
         setMatchFinished(true)
         toast(`Match finished. ${resultText}`, { icon: '🏁' } as any)
+        toast(`Match finished. ${resultText}`, { icon: '🏁' } as any)
+
+        // Update local state immediately
+        if (inningId === effectiveCurrentBatting) {
+          setCurrentInnings(computed)
+        }
+        if (inningId === 'teamA') setTeamAInnings(computed)
+        if (inningId === 'teamB') setTeamBInnings(computed)
+
         return computed
       }
     }
@@ -939,6 +947,13 @@ export default function AdminLiveScoring() {
       const suggested = suggestNextBowler([selectedBowler])
       setSuggestedNextBowlerId(suggested)
       toast('Over complete.', { icon: '🎯' } as any)
+    }
+
+    // Verify we are updating the active context
+    if (inningId === effectiveCurrentBatting) {
+      setCurrentInnings(computed)
+      if (inningId === 'teamA') setTeamAInnings(computed)
+      if (inningId === 'teamB') setTeamBInnings(computed)
     }
 
     return computed
@@ -1111,9 +1126,72 @@ export default function AdminLiveScoring() {
         totalRuns: payload.totalRuns,
         isLegal,
         wicket: payload.wicket as any,
+        isWicket: Boolean(payload.wicket),
         freeHit: isFreeHit,
         timestamp: Timestamp.now(),
         createdAt: new Date().toISOString(),
+      }
+
+      // --- STRIKE ROTATION LOGIC (ICC RULES) ---
+      let nextStrikerId = selectedStriker;
+      let nextNonStrikerId = selectedNonStriker;
+
+      // 1. Calculate Physical Runs (runs actually run by crossing)
+      // - Normal/No-Ball: runsOffBat + byes + legByes
+      // - Wide: The runs input (which equates to totalRuns - 1)
+      let physicalRuns = 0;
+      if (payload.kind === 'wide') {
+        physicalRuns = payload.totalRuns - 1; // e.g. Wide+1 = 2 total, 1 run
+      } else {
+        physicalRuns = payload.runsOffBat + (payload.extras.byes || 0) + (payload.extras.legByes || 0);
+      }
+
+      // Check for Boundary (4 or 6 off bat) - usually no rotation unless overthrows (ignored for now)
+      const isBoundary = payload.runsOffBat === 4 || payload.runsOffBat === 6;
+
+      // Rule: Rotate if odd physical runs and NOT a boundary
+      if (!isBoundary && physicalRuns % 2 !== 0) {
+        const temp = nextStrikerId;
+        nextStrikerId = nextNonStrikerId;
+        nextNonStrikerId = temp;
+      }
+
+      // 2. Over Completion Rotation
+      // If legal ball completes the over (becomes multiple of 6), strikers change ends (rotate roles)
+      // Note: We use the *calculated* legalBalls count (current + 1)
+      const isOverComplete = isLegal && ((legalBalls + 1) % 6 === 0);
+      if (isOverComplete) {
+        const temp = nextStrikerId;
+        nextStrikerId = nextNonStrikerId;
+        nextNonStrikerId = temp;
+      }
+
+      // Apply Wicket Logic: If wicket fell, handle "Next Batter" expectations
+      // For now, we keep the rotation logic valid for the *Not Out* batter.
+      // The Dismissed batter will be replaced by the modal logic later,
+      // but we must update the *Running* state correctly first (e.g. Run Out on 3rd run).
+      let isWicketThatClearsStriker = false;
+      let isWicketThatClearsNonStriker = false;
+
+      if (payload.wicket) {
+        const wType = payload.wicket.type || 'bowled';
+
+        if (wType === 'run-out' || wType === 'retired') {
+          // Identify who is dismissed
+          const dismissedId = payload.wicket.dismissedPlayerId;
+
+          if (dismissedId === nextStrikerId) {
+            isWicketThatClearsStriker = true;
+            nextStrikerId = '';
+          } else if (dismissedId === nextNonStrikerId) {
+            isWicketThatClearsNonStriker = true;
+            nextNonStrikerId = '';
+          }
+        } else {
+          // Bowled/Caught/Standard: Striker is dismissed.
+          isWicketThatClearsStriker = true;
+          nextStrikerId = ''; // Clear it so we don't force-feed the dead batter
+        }
       }
 
       const ballsRef = collection(
@@ -1173,6 +1251,16 @@ export default function AdminLiveScoring() {
       // Update free hit state (no-ball -> next ball is free hit)
       setIsFreeHit(nextFreeHit)
 
+      // Update Local State & Firestore with New Positions (if changed and not wicket)
+      if (!payload.wicket && (nextStrikerId !== selectedStriker || nextNonStrikerId !== selectedNonStriker)) {
+        setSelectedStriker(nextStrikerId);
+        setSelectedNonStriker(nextNonStrikerId);
+
+        // We'll trust recomputeAndSave to update Firestore, but we should update the 'computed' pointers 
+        // so recomputeAndSave doesn't overwrite our rotation with old data.
+        // Actually, recomputeAndSave takes 'preferredNext'.
+      }
+
       // Recalculate innings and persist so public pages show data
       // IMPORTANT: Firestore reads right after a write can sometimes lag; force-include the new ball for recalculation.
       const newBall = { id: newBallId, ...ballData } as Ball
@@ -1185,49 +1273,39 @@ export default function AdminLiveScoring() {
       if (!ballsForRecalc.some((b) => b.id === newBall.id || b.sequence === newBall.sequence)) {
         ballsForRecalc = [...ballsForRecalc, newBall].sort((a, b) => Number(a.sequence || 0) - Number(b.sequence || 0))
       }
+
       const computed = await recomputeAndSave(
         ballsForRecalc,
-        payload.meta?.preferredNextBatterId && payload.meta?.preferredNextSlot
-          ? { slot: payload.meta.preferredNextSlot, playerId: payload.meta.preferredNextBatterId }
-          : undefined,
-        nextFreeHit
+        {
+          strikerId: isWicketThatClearsStriker ? '' : nextStrikerId,
+          nonStrikerId: isWicketThatClearsNonStriker ? '' : nextNonStrikerId,
+          nextFreeHit: nextFreeHit
+        }
       )
 
+      // Also ensure Non-Striker is updated if valid and not cleared
+      if (!payload.wicket && !isWicketThatClearsNonStriker && nextNonStrikerId && computed) {
+        const matchRef = doc(db, COLLECTIONS.MATCHES, matchId)
+        await updateDoc(matchRef, {
+          currentNonStrikerId: nextNonStrikerId,
+          nonStrikerId: nextNonStrikerId
+        } as any)
+      }
+
       // Handle run-out strike rotation - now with admin control
-      if (payload.kind === 'wicket' && payload.wicket && payload.wicket.type === 'run-out') {
-        // Check if admin wants manual control over strike rotation
+      if (payload.wicket && payload.wicket.type === 'run-out') {
         if (allowManualStrikeControl) {
-          // If manual control is enabled, don't automatically rotate strike
-          // The admin can manually swap striker and non-striker as needed
-          toast('Run-out recorded. Manual strike control is enabled - adjust striker/non-striker as needed.', { icon: '🔄' } as any);
-        } else {
-          // Automatic rotation based on runs completed (odd runs = rotate)
-          if (payload.runsOffBat % 2 === 1) {  // Odd runs (1, 3, etc.)
-            // Swap striker and non-stricker
-            const tempStriker = selectedStriker;
-            const tempNonStriker = selectedNonStriker;
-
-            // Update local state
-            setSelectedStriker(tempNonStriker);
-            setSelectedNonStriker(tempStriker);
-
-            // Update in Firestore
-            if (matchId) {
-              const matchRef = doc(db, COLLECTIONS.MATCHES, matchId);
-              await updateDoc(matchRef, {
-                currentStrikerId: tempNonStriker,
-                currentNonStrikerId: tempStriker,
-                nonStrikerId: tempStriker,
-                updatedAt: Timestamp.now(),
-              } as any);
-            }
-          }
+          toast('Run-out recorded. Manual strike control enabled.', { icon: '🔄' } as any);
         }
+        // else: logic handled in modal or skipped
       }
 
       // Clear, visible feedback for wicket so scorer knows it executed
-      if (payload.kind === 'wicket' && payload.wicket) {
+      if (payload.wicket) {
         const outName = playersById.get(payload.wicket.dismissedPlayerId)?.name || 'Batter'
+        if (isOverComplete) {
+          toast('Over Complete! Ends changed.', { icon: 'cw' } as any)
+        }
         const wicketLabels: Record<string, string> = {
           'run-out': 'Run Out',
           'hit-wicket': 'Hit Wicket',
@@ -1385,7 +1463,7 @@ export default function AdminLiveScoring() {
       }
 
       // Recompute with the correct bowler override
-      const computed = await recomputeAndSave(allBalls, undefined, undefined, prevBowlerId)
+      const computed = await recomputeAndSave(allBalls, { bowlerId: prevBowlerId })
       await refreshLastBall()
 
       // Reset match status if it was finished

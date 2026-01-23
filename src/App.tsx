@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 // Rebuild trigger 1
+import { useState } from 'react';
 import Layout from './components/Layout'
 import AdminLayout from './components/admin/AdminLayout'
 import Home from './pages/Home'
@@ -26,6 +27,7 @@ import AdminLiveMatches from './pages/admin/AdminLiveMatches'
 import AdminLiveScoring from './pages/admin/AdminLiveScoring'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminSettings from './pages/admin/AdminSettings'
+import SplashScreen from './components/common/SplashScreen'
 
 function LayoutWrapper() {
   return (
@@ -49,6 +51,16 @@ function TournamentTabRedirect({ tab }: { tab: 'points' | 'stats' }) {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleLoadingComplete = () => {
+    setShowSplash(false);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onLoadingComplete={handleLoadingComplete} />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>

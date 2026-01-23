@@ -218,6 +218,26 @@
     }
   }
 
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   .animate-marquee {
     animation: marquee 15s linear infinite;
   }
@@ -240,6 +260,18 @@
 
   .animate-reverse-spin {
     animation: reverse-spin 15s linear infinite;
+  }
+
+  .animate-fade-in-scale {
+    animation: fadeInScale 1.5s ease-out forwards;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  .font-cursive {
+    font-family: "Brush Script MT", "Brush Script Std", cursive, serif;
   }
 
   .animate-marquee:hover {

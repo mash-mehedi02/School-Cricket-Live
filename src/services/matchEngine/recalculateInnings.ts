@@ -154,49 +154,56 @@ function ballsToOvers(balls: number): string {
 /**
  * Parse ball event to determine ICC-compliant properties
  */
-function parseBallEvent(ball: any): BallEvent & {
+/**
+ * Parse ball event to determine ICC-compliant properties
+ */
+export function parseBallEvent(ball: any): BallEvent & {
   sequence?: number
   runsOffBat?: number
   extras?: { wides?: number; noBalls?: number; byes?: number; legByes?: number; penalty?: number }
   wicket?: { type?: string; dismissedPlayerId?: string; creditedToBowler?: boolean; fielderId?: string }
   freeHit?: boolean
 } {
+  // Safe helper to get number
+  const num = (v: any) => (v && !isNaN(Number(v))) ? Number(v) : 0;
+
+  const rawExtras = ball.extras || {};
+  // Normalize legacy keys
+  const extras = {
+    wides: num(rawExtras.wides),
+    noBalls: num(rawExtras.noBalls),
+    byes: num(rawExtras.byes || rawExtras.bye),
+    legByes: num(rawExtras.legByes || rawExtras.legBye || rawExtras.legbye),
+    penalty: num(rawExtras.penalty),
+  };
+
   // Determine if ball is legal (ICC Rule: Wide and No-ball are NOT legal)
-  const isWide = ball.extraType === 'wide' || ball.isWide === true
-  const isNoBall = ball.extraType === 'no-ball' || ball.isNoBall === true || ball.extraType === 'noBall'
-  const isLegal = ball.isLegal !== false && !isWide && !isNoBall
+  const isWide = ball.extraType === 'wide' || ball.isWide === true || extras.wides > 0;
+  const isNoBall = ball.extraType === 'no-ball' || ball.isNoBall === true || ball.extraType === 'noBall' || extras.noBalls > 0;
+  const isLegal = ball.isLegal !== false && !isWide && !isNoBall;
 
   // Determine runs
-  // Priority: Use ball.runs (total), otherwise calculate from components
-  const runsOffBat = Number(ball.runsOffBat || ball.batRuns || 0)
-  const rawExtras = ball.extras || {}
-  // Normalize legacy keys (legBye/legbye/bye) -> (legByes/byes)
-  const extras = {
-    wides: Number(rawExtras.wides || 0),
-    noBalls: Number(rawExtras.noBalls || 0),
-    byes: Number(rawExtras.byes || rawExtras.bye || 0),
-    legByes: Number(rawExtras.legByes || rawExtras.legBye || rawExtras.legbye || 0),
-    penalty: Number(rawExtras.penalty || 0),
-  }
-  const totalExtras = Number(extras.wides || 0) + Number(extras.noBalls || 0) + Number(extras.byes || 0) + Number(extras.legByes || 0) + Number(extras.penalty || 0)
-  const runs = ball.runs !== undefined && ball.runs !== null ? Number(ball.runs) : (runsOffBat + totalExtras)
-  const batRuns = runsOffBat
-  const extraRuns = runs - batRuns
+  const runsOffBat = num(ball.runsOffBat || ball.batRuns);
+  const totalExtras = extras.wides + extras.noBalls + extras.byes + extras.legByes + extras.penalty;
 
-  // Determine wicket
-  const wicket = ball.wicket || {}
-  const isWicket = ball.isWicket === true || Boolean(wicket.type) || Boolean(ball.wicketType) || Boolean(ball.dismissal)
-  const wicketType = wicket.type || ball.wicketType || ball.dismissal || ''
+  // Total runs: prefer explicit 'runs' field, else sum components
+  let runs = (ball.runs !== undefined && ball.runs !== null) ? Number(ball.runs) : (runsOffBat + totalExtras);
+
+  // Wicket Detection - Robust Check
+  const wicket = ball.wicket || {};
+  const wicketType = wicket.type || ball.wicketType || ball.dismissal || '';
+  const isWicket = ball.isWicket === true || Boolean(wicketType);
+
   const isRunOut = wicketType.toLowerCase().includes('run out') ||
     wicketType.toLowerCase().includes('runout') ||
-    wicketType.toLowerCase().includes('ro')
+    wicketType.toLowerCase().includes('ro');
 
   return {
     id: ball.id,
     sequence: ball.sequence,
     runs,
-    batRuns,
-    extraRuns,
+    batRuns: runsOffBat,
+    extraRuns: totalExtras,
     isLegal,
     isWide,
     isNoBall,
@@ -211,7 +218,7 @@ function parseBallEvent(ball: any): BallEvent & {
     ball: ball.ball,
     extraType: ball.extraType,
     countsBall: isLegal,
-    creditRunsToBowler: wicket.creditedToBowler !== false && !isRunOut, // Default true, except for run-outs
+    creditRunsToBowler: wicket.creditedToBowler !== false && !isRunOut,
     runsOffBat,
     extras,
     wicket,
@@ -223,33 +230,38 @@ function parseBallEvent(ball: any): BallEvent & {
  * Convert ball to display badge for Recent Overs
  */
 function ballToBadge(ball: ReturnType<typeof parseBallEvent>): { value: string; type: OverBall['type'] } {
+  // 1. Wickets take precedence
   if (ball.isWicket) {
     return { value: 'W', type: 'wicket' }
   }
+
+  // 2. Extra types
   if (ball.isWide) {
-    const runs = ball.runs > 1 ? ball.runs.toString() : ''
+    // Standard wide is 1 run. If total runs > 1, show Wd+N
+    // If runs=1, show 'wd'
+    const runs = ball.runs > 1 ? String(ball.runs) : ''
     return { value: runs ? `wd+${runs}` : 'wd', type: 'wide' }
   }
+
   if (ball.isNoBall) {
-    const runs = (ball.runsOffBat || 0) + (ball.extras?.noBalls || 0)
+    // No ball runs = runsOffBat + noBallExtra(1)
+    const runs = ball.runs
     if (runs > 1) {
       return { value: `nb+${runs}`, type: 'noball' }
     }
     return { value: 'nb', type: 'noball' }
   }
-  // Byes / Leg-byes (legal deliveries, but runs are extras)
-  const lb = Number(ball.extras?.legByes || 0)
-  if (lb > 0) {
-    return { value: `${lb}lb`, type: 'legbye' }
+
+  // 3. Byes/LegByes
+  if (ball.extras?.legByes && ball.extras.legByes > 0) {
+    return { value: `${ball.extras.legByes}lb`, type: 'legbye' }
   }
-  const by = Number(ball.extras?.byes || 0)
-  if (by > 0) {
-    return { value: `${by}b`, type: 'bye' }
+  if (ball.extras?.byes && ball.extras.byes > 0) {
+    return { value: `${ball.extras.byes}b`, type: 'bye' }
   }
+
+  // 4. Normal Runs
   const runs = ball.runsOffBat || 0
-  if (runs === 0) {
-    return { value: '0', type: 'normal' }
-  }
   return { value: runs.toString(), type: 'normal' }
 }
 
@@ -268,16 +280,23 @@ function ballToBadge(ball: ReturnType<typeof parseBallEvent>): { value: string; 
 export async function recalculateInnings(
   matchId: string,
   inningId: 'teamA' | 'teamB',
-  options?: { useTransaction?: boolean }
+  options?: {
+    useTransaction?: boolean;
+    balls?: ReturnType<typeof parseBallEvent>[];
+    matchData?: any;
+  }
 ): Promise<InningsStats> {
-  const { useTransaction = false } = options || {}
+  const { useTransaction = false, balls: ballsOverride, matchData: matchDataOverride } = options || {}
   try {
     console.log(`[MatchEngine] Recalculating innings ${inningId} for match ${matchId}`)
 
     // Get match data for context
-    const matchRef = doc(db, MATCHES_COLLECTION, matchId)
-    const matchDoc = await getDoc(matchRef)
-    const matchData = matchDoc.exists() ? matchDoc.data() : null
+    let matchData = matchDataOverride
+    if (!matchData) {
+      const matchRef = doc(db, MATCHES_COLLECTION, matchId)
+      const matchDoc = await getDoc(matchRef)
+      matchData = matchDoc.exists() ? matchDoc.data() : null
+    }
 
     if (!matchData) {
       throw new Error(`Match ${matchId} not found`)
@@ -286,61 +305,66 @@ export async function recalculateInnings(
     // Fetch all balls for this innings ordered by sequence
     let balls: ReturnType<typeof parseBallEvent>[] = []
 
-    try {
-      const ballsRef = collection(db, MATCHES_COLLECTION, matchId, BALLS_SUBCOLLECTION)
-
-      // Try sequence orderBy first (most reliable)
-      let ballsQuery
+    if (ballsOverride) {
+      balls = ballsOverride
+      console.log(`[MatchEngine] Using ${balls.length} provided override balls`)
+    } else {
       try {
-        ballsQuery = query(
-          ballsRef,
-          where('innings', '==', inningId),
-          orderBy('sequence', 'asc')
-        )
-      } catch (seqError) {
-        // Fallback to timestamp if sequence index doesn't exist
+        const ballsRef = collection(db, MATCHES_COLLECTION, matchId, BALLS_SUBCOLLECTION)
+
+        // Try sequence orderBy first (most reliable)
+        let ballsQuery
         try {
           ballsQuery = query(
             ballsRef,
             where('innings', '==', inningId),
-            orderBy('timestamp', 'asc')
+            orderBy('sequence', 'asc')
           )
-        } catch (tsError) {
-          // Last resort: no orderBy
-          ballsQuery = query(
-            ballsRef,
-            where('innings', '==', inningId)
-          )
+        } catch (seqError) {
+          // Fallback to timestamp if sequence index doesn't exist
+          try {
+            ballsQuery = query(
+              ballsRef,
+              where('innings', '==', inningId),
+              orderBy('timestamp', 'asc')
+            )
+          } catch (tsError) {
+            // Last resort: no orderBy
+            ballsQuery = query(
+              ballsRef,
+              where('innings', '==', inningId)
+            )
+          }
         }
+
+        const ballsSnapshot = await getDocs(ballsQuery)
+        ballsSnapshot.forEach((ballDoc) => {
+          const parsed = parseBallEvent({ id: ballDoc.id, ...ballDoc.data() })
+          balls.push(parsed)
+        })
+
+        // Sort by sequence if available, otherwise by timestamp
+        balls.sort((a, b) => {
+          if (a.sequence !== undefined && b.sequence !== undefined && a.sequence !== b.sequence) {
+            return a.sequence - b.sequence
+          }
+          const aTime = a.timestamp?.toMillis?.() || (a.timestamp ? new Date(a.timestamp).getTime() : 0) || 0
+          const bTime = b.timestamp?.toMillis?.() || (b.timestamp ? new Date(b.timestamp).getTime() : 0) || 0
+          return aTime - bTime
+        })
+
+        console.log(`[MatchEngine] Fetched ${balls.length} balls from subcollection for ${inningId}`)
+      } catch (subcollectionError) {
+        // Fallback: Use recentBalls from match document
+        console.log('[MatchEngine] Balls subcollection not found, using recentBalls array')
+        const recentBalls = Array.isArray(matchData.recentBalls) ? matchData.recentBalls : []
+        balls = recentBalls
+          .filter((ball: any) => ball.innings === inningId || ball.team === inningId)
+          .reverse() // recentBalls is stored newest first, reverse for chronological
+          .map((ball: any, idx: number) => parseBallEvent({ ...ball, sequence: idx + 1 }))
+
+        console.log(`[MatchEngine] Using ${balls.length} balls from recentBalls array`)
       }
-
-      const ballsSnapshot = await getDocs(ballsQuery)
-      ballsSnapshot.forEach((ballDoc) => {
-        const parsed = parseBallEvent({ id: ballDoc.id, ...ballDoc.data() })
-        balls.push(parsed)
-      })
-
-      // Sort by sequence if available, otherwise by timestamp
-      balls.sort((a, b) => {
-        if (a.sequence !== undefined && b.sequence !== undefined && a.sequence !== b.sequence) {
-          return a.sequence - b.sequence
-        }
-        const aTime = a.timestamp?.toMillis?.() || (a.timestamp ? new Date(a.timestamp).getTime() : 0) || 0
-        const bTime = b.timestamp?.toMillis?.() || (b.timestamp ? new Date(b.timestamp).getTime() : 0) || 0
-        return aTime - bTime
-      })
-
-      console.log(`[MatchEngine] Fetched ${balls.length} balls from subcollection for ${inningId}`)
-    } catch (subcollectionError) {
-      // Fallback: Use recentBalls from match document
-      console.log('[MatchEngine] Balls subcollection not found, using recentBalls array')
-      const recentBalls = Array.isArray(matchData.recentBalls) ? matchData.recentBalls : []
-      balls = recentBalls
-        .filter((ball) => ball.innings === inningId || ball.team === inningId)
-        .reverse() // recentBalls is stored newest first, reverse for chronological
-        .map((ball, idx) => parseBallEvent({ ...ball, sequence: idx + 1 }))
-
-      console.log(`[MatchEngine] Using ${balls.length} balls from recentBalls array`)
     }
 
     if (balls.length === 0) {
@@ -460,7 +484,8 @@ export async function recalculateInnings(
             balls: 0,
             fours: 0,
             sixes: 0,
-            notOut: true,
+            notOut: false, // Default to false, will settle at the end
+            dismissal: '',
           })
         }
         const batsman = batsmanStatsMap.get(batsmanId)!
@@ -479,7 +504,6 @@ export async function recalculateInnings(
         // Mark as dismissed if wicket
         if (ball.isWicket && ball.dismissedBatsmanId === batsmanId) {
           batsman.dismissal = ball.wicketType || 'Out'
-          batsman.notOut = false
         }
       }
 
@@ -564,12 +588,11 @@ export async function recalculateInnings(
       const over = oversMap.get(overNumber)!
       const badge = ballToBadge(ball)
 
-      // ICC Rule: Only legal balls go into the 6-ball slots
-      // Wides/no-balls go to extras array but are shown in the same over
-      if (isLegal) {
-        over.balls.push({ value: badge.value, type: badge.type, runsOffBat })
-      } else if (isWide || isNoBall) {
-        // Add to extras array (shown separately but in same over)
+      // Add ALL balls to the main balls array for the timeline (chronological order)
+      over.balls.push({ value: badge.value, type: badge.type, runsOffBat })
+
+      // Also track extras separately if needed for other UI, but timeline uses over.balls
+      if (isWide || isNoBall) {
         over.extras = over.extras || []
         over.extras.push({ badge: badge.value, runs: totalBallRuns })
       }
@@ -577,8 +600,9 @@ export async function recalculateInnings(
       over.totalRuns += totalBallRuns
 
       // Mark over as locked if it has 6 legal balls
-      // Check legal balls in this over by counting balls in the over array
-      if (over.balls.length >= 6) {
+      // We count legal balls in the array (excluding wides/noballs)
+      const legalBallCount = over.balls.filter(b => b.type !== 'wide' && b.type !== 'noball').length
+      if (legalBallCount >= 6) {
         over.isLocked = true
       }
     })
@@ -590,6 +614,28 @@ export async function recalculateInnings(
     // Calculate Current Run Rate (CRR)
     const oversDecimal = legalBalls / 6
     const currentRunRate = oversDecimal > 0 ? totalRuns / oversDecimal : (legalBalls > 0 ? (totalRuns * 6) / legalBalls : 0)
+
+    // Correctly finalize Not Out vs Retired/Did Not Bat
+    // Only the CURRENT striker and non-striker are "Not Out".
+    const finalStrikerId = options?.matchData?.currentStrikerId !== undefined ? options.matchData.currentStrikerId : matchData.currentStrikerId;
+    const finalNonStrikerId = options?.matchData?.currentNonStrikerId !== undefined ? options.matchData.currentNonStrikerId : matchData.currentNonStrikerId;
+
+    batsmanStatsMap.forEach((stats, pId) => {
+      // If explicit dismissal, they are OUT (notOut = false).
+      if (stats.dismissal) {
+        stats.notOut = false;
+        return;
+      }
+
+      // If they are currently at the crease, they are NOT OUT.
+      if (pId === finalStrikerId || pId === finalNonStrikerId) {
+        stats.notOut = true;
+      } else {
+        // They batted, have no dismissal, but are not at crease => Retired / Inactive
+        stats.notOut = false;
+        // Optional: stats.dismissal = 'Retired Not Out' or leave empty based on preference
+      }
+    });
 
     // --- Dynamic Batting Order Calculation ---
     const { firstSide, secondSide } = (() => {
@@ -622,13 +668,13 @@ export async function recalculateInnings(
       // We look for score.teamA or score.teamB based on who batted first
       const firstBatScore = (matchData.score?.[firstSide]?.runs) || 0
       target = firstBatScore + 1
-      remainingRuns = target - totalRuns
+      remainingRuns = target! - totalRuns
       remainingBalls = Math.max(maxBalls - legalBalls, 0)
 
       // Check if match is finished
       const allWicketsDown = totalWickets >= 10
       const allOversCompleted = legalBalls >= maxBalls
-      const targetAchieved = totalRuns >= target
+      const targetAchieved = totalRuns >= target!
       const isMatchFinished = allWicketsDown || allOversCompleted || targetAchieved
 
       if (isMatchFinished) {
